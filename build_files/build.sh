@@ -9,8 +9,12 @@ set -ouex pipefail
 # List of rpmfusion packages can be found here:
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
+dnf5 -y copr enable megger/saga
+
 # this installs a package from fedora repos
-dnf5 install -y tmux 
+dnf5 install -y gdal gdal-python3 geos proj proj-data libgeotiff libspatialite spatialite-tools spatialindex postgis postgresql qgis python3-qgis qgis-grass grass saga \
+python3-shapely python3-fiona python3-pandas python3-numpy \
+ && dnf5 clean all
 
 # Use a COPR Example:
 #
@@ -19,6 +23,10 @@ dnf5 install -y tmux
 # Disable COPRs so they don't end up enabled on the final image:
 # dnf5 -y copr disable ublue-os/staging
 
-#### Example for enabling a System Unit File
+dnf5 -y copr disable megger/saga
 
+# No age attestation or verification allowed here
+systemctl mask systemd-homed
+
+# Enabled systemd services
 systemctl enable podman.socket

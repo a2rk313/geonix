@@ -4,9 +4,9 @@
   <img src="logo/logo.png" alt="Geonix Logo" width="200"/>
 </p>
 
-Custom [bootc](https://github.com/bootc-dev/bootc) images for geospatial analysis, based on [Universal Blue](https://universal-blue.org/).
+A Universal Blue based distro made for the cool folks that use GIS and Remote Sensing knowledge to make the world a better place.
 
-Geonix provides ready-to-use Fedora Atomic desktop images pre-loaded with a comprehensive GIS software stack. Available in two variants:
+Ready-to-use Fedora Atomic desktop images pre-loaded with a comprehensive GIS software stack. Available in two variants:
 
 | Variant | Desktop | Base Image | Image |
 |---------|---------|-----------|-------|

@@ -39,12 +39,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build.sh
 
 # --- OS-BUILD IDENTITY FORGE ---
-# 1. Force ID=fedora so bootc-image-builder knows to use the btrfs filesystem.
-# 2. Inject VARIANT_ID and NAME for proper Geonix desktop branding.
 RUN sed -i 's/^ID=.*$/ID=fedora/' /usr/lib/os-release && \
-    sed -i 's/^ID=.*$/ID=fedora/' /etc/os-release && \
+    sed -i 's/^ID=.*$/ID=fedora/' /usr/lib/os-release.d/os-release-fedora && \
     echo 'VARIANT_ID="geonix"' >> /usr/lib/os-release && \
-    echo 'NAME="Geonix Linux"' >> /usr/lib/os-release
+    echo 'NAME="Geonix"' >> /usr/lib/os-release
 
 # Ensure bootc is present in the final image
 RUN rpm-ostree install -y bootc && rpm-ostree cleanup -m

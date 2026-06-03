@@ -30,3 +30,11 @@ systemctl mask systemd-homed
 
 # Enabled systemd services
 systemctl enable podman.socket
+
+# Fix for ID= parameter for osbuild
+if [ -f /usr/lib/os-release.d/os-release-fedora ]; then
+    sed -i 's/^ID=.*$/ID=fedora/' /usr/lib/os-release.d/os-release-fedora
+fi
+
+echo 'VARIANT_ID="geonix"' >> /usr/lib/os-release
+echo 'NAME="Geonix"' >> /usr/lib/os-release

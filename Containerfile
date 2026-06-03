@@ -38,21 +38,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build.sh
 
-# --- OS-BUILD IDENTITY FORGE ---
-# --- BULLETPROOF OS-BUILD IDENTITY FORGE ---
-# Safely overwrite ID= without breaking the ostree symlinks or inodes.
-# The 'if' statement prevents the build from crashing if the base image
-# has already removed the legacy os-release.d directory.
-RUN sed -i 's/^ID=.*$/ID=fedora/' /usr/lib/os-release && \
-    if [ -f /usr/lib/os-release.d/os-release-fedora ]; then sed -i 's/^ID=.*$/ID=fedora/' /usr/lib/os-release.d/os-release-fedora; fi && \
-    echo 'VARIANT_ID="geonix"' >> /usr/lib/os-release && \
-    echo 'NAME="Geonix"' >> /usr/lib/os-release
-
-# Ensure bootc is present in the final image
-RUN rpm-ostree install -y bootc && rpm-ostree cleanup -m
-
 ### LINTING
 ## Verify final image and contents are correct.
 RUN bootc container lint
-
-CMD ["/usr/sbin/init"]

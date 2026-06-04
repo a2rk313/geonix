@@ -12,7 +12,7 @@ set -ouex pipefail
 dnf5 -y copr enable megger/saga
 
 # this installs a package from fedora repos
-dnf5 install -y gdal gdal-python3 geos proj proj-data libgeotiff libspatialite spatialite-tools spatialindex postgis postgresql qgis python3-qgis qgis-grass grass saga \
+dnf5 install -y gdal python3-gdal geos proj proj-data libgeotiff libspatialite spatialite-tools spatialindex postgis postgresql qgis python3-qgis qgis-grass grass saga \
 python3-shapely python3-fiona python3-pandas python3-numpy fuse fuse-libs \
  && dnf5 clean all
 

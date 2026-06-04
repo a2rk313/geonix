@@ -24,8 +24,8 @@ on:
       - "./.github/workflows/build-disk.yml"
 
 env:
-  IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
+  IMAGE_NAME: ${{ github.event.repository.name }}
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
   BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest"
 
@@ -42,12 +42,14 @@ jobs:
       matrix:
         include:
           - disk-type: "qcow2"
-            image_name: geonix-gnome # qcow2 only needs one variant; pick one or duplicate
+            image_name: geonix-gnome
             iso_config: "./disk_config/disk.toml"
-          - disk-type: "anaconda-iso"
+          # Changed from anaconda-iso to the modern bootiso
+          - disk-type: "bootiso"
             image_name: geonix-plasma
             iso_config: "./disk_config/iso-kde.toml"
-          - disk-type: "anaconda-iso"
+          # Changed from anaconda-iso to the modern bootiso
+          - disk-type: "bootiso"
             image_name: geonix-gnome
             iso_config: "./disk_config/iso-gnome.toml"
     permissions:
@@ -83,13 +85,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      # --- ROOT-LEVEL PODMAN AUTH & PULL ---
       - name: Log in to GitHub Container Registry as Root
         run: echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Pull OCI Image to Root Storage
         run: sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ matrix.image_name }}:${{ env.DEFAULT_TAG }}
-      # -------------------------------------
 
       - name: Build disk images
         id: build
@@ -101,13 +101,16 @@ jobs:
           chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
           types: ${{ matrix.disk-type }}
           additional-args: --use-librepo=True
-          # --- EXPLICIT ROOTFS OVERRIDE ---
-          rootfs: ${{ matrix.disk-type == 'anaconda-iso' && 'ext4' || 'btrfs' }}
+          # Explicit RootFs bypasses the osbuild identity panic
+          rootfs: ${{ matrix.disk-type == 'bootiso' && 'ext4' || 'btrfs' }}
 
       - name: Upload disk images and Checksum to Job Artifacts
         if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          # --- DYNAMIC ARTIFACT NAMING FIX ---
+          name: ${{ matrix.image_name }}-${{ matrix.disk-type }}-${{ inputs.platform || 'amd64' }}
+          # -----------------------------------
           path: ${{ steps.build.outputs.output-directory }}
           if-no-files-found: error
           retention-days: 0

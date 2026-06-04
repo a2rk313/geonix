@@ -42,15 +42,15 @@ echo 'NAME="Geonix"' >> /usr/lib/os-release
 # --- 4. PLYMOUTH BOOT SCREEN BRANDING ---
 echo "--> Applying custom Geonix boot logos..."
 
-cp /tmp/logo/logo.png /usr/share/plymouth/themes/spinner/watermark.png
-cp /tmp/logo/logo.png /usr/share/plymouth/themes/spinner/bgrt-fallback.png
+cp /build-assets/logo/logo.png /usr/share/plymouth/themes/spinner/watermark.png
+cp /build-assets/logo/logo.png /usr/share/plymouth/themes/spinner/bgrt-fallback.png
 
 
 # --- 5. DESKTOP ENVIRONMENT BRANDING (GNOME & KDE) ---
 echo "--> Applying DE panel logos..."
 
 mkdir -p /usr/share/icons/hicolor/scalable/apps/
-cp /tmp/logo/logo.png /usr/share/icons/hicolor/scalable/apps/geonix-logo.png
+cp /build-assets/logo/logo.png /usr/share/icons/hicolor/scalable/apps/geonix-logo.png
 
 echo "--> Configuring GNOME Logo Menu..."
 cat <<EOF > /usr/share/glib-2.0/schemas/99-geonix-logo.gschema.override
@@ -62,7 +62,11 @@ glib-compile-schemas /usr/share/glib-2.0/schemas/
 
 echo "--> Configuring KDE Plasma Kickoff icon..."
 mkdir -p /usr/share/icons/hicolor/scalable/places/
-cp /tmp/logo/logo.png /usr/share/icons/hicolor/scalable/places/start-here.png
-cp /tmp/logo/logo.png /usr/share/icons/hicolor/scalable/places/start-here-kde.png
+cp /build-assets/logo/logo.png /usr/share/icons/hicolor/scalable/places/start-here.png
+cp /build-assets/logo/logo.png /usr/share/icons/hicolor/scalable/places/start-here-kde.png
 
 gtk-update-icon-cache -f -t /usr/share/icons/hicolor || true
+
+# --- 6. CLEANUP ---
+# Delete the staging directory so the logo is not duplicated in the final OS image
+rm -rf /build-assets

@@ -33,7 +33,8 @@ RUN rm /opt && mkdir /opt
 ## the following RUN directive does all the things required to run "build.sh" as recommended.
 
 # --- INJECT ASSETS BEFORE SCRIPT EXECUTION ---
-COPY logo/ /tmp/logo/
+# Bypassing the /tmp tmpfs mount by staging in a custom directory
+COPY logo/ /build-assets/logo/
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \

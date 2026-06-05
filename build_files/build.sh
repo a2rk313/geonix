@@ -142,8 +142,7 @@ EOF
 # --- 8. SYSTEM CLI BRANDING (UJUST -> GJ) ---
 echo "--> Rebranding ujust to gj CLI..."
 
-# 1. Inject the root Justfile (Defensive Check)
-# Targeting the capital 'J' Justfile in the repository root.
+# 1. Inject the root Justfile
 CUSTOM_REPO_JUSTFILE="/ctx/Justfile"
 
 if [ -f "$CUSTOM_REPO_JUSTFILE" ]; then
@@ -154,6 +153,7 @@ else
 fi
 
 # 2. Overwrite the Master Entry Justfile
+# We strip out the upstream URLs and replace them with Geonix branding.
 cat <<'EOF' > /usr/share/ublue-os/just/00-entry.just
 set allow-duplicate-recipes := true
 set ignore-comments := true
@@ -175,11 +175,7 @@ import "/usr/share/ublue-os/just/update.just"
 import? "/usr/share/ublue-os/just/60-custom.just"
 EOF
 
-# 3. Forge the new 'gj' executable
-cat <<'EOF' > /usr/bin/gj
-#!/usr/bin/bash
-just --justfile /usr/share/ublue-os/just/00-entry.just "${@}"
-EOF
-
-chmod +x /usr/bin/gj
-ln -s /usr/bin/gj /usr/bin/ujust
+# 3. Create the 'gj' shortcut safely
+# We do NOT forge a new file, and we do NOT overwrite ujust.
+# We create a symlink named 'gj' that simply points to the existing 'ujust' binary.
+ln -s /usr/bin/ujust /usr/bin/gj

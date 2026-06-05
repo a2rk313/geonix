@@ -142,9 +142,16 @@ EOF
 # --- 8. SYSTEM CLI BRANDING (UJUST -> GJ) ---
 echo "--> Rebranding ujust to gj CLI..."
 
-# 1. Inject your custom repository justfile (The Conditional Import)
-# Replace the first path with wherever your file lives in your repo
-cp /ctx/custom_scripts/my-commands.just /usr/share/ublue-os/just/60-custom.just
+# 1. Inject the root Justfile (Defensive Check)
+# Targeting the capital 'J' Justfile in the repository root.
+CUSTOM_REPO_JUSTFILE="/ctx/Justfile"
+
+if [ -f "$CUSTOM_REPO_JUSTFILE" ]; then
+    echo "--> Custom Justfile detected at root. Injecting into OS..."
+    cp "$CUSTOM_REPO_JUSTFILE" /usr/share/ublue-os/just/60-custom.just
+else
+    echo "--> No custom Justfile found at $CUSTOM_REPO_JUSTFILE. Skipping injection..."
+fi
 
 # 2. Overwrite the Master Entry Justfile
 cat <<'EOF' > /usr/share/ublue-os/just/00-entry.just
@@ -168,6 +175,11 @@ import "/usr/share/ublue-os/just/update.just"
 import? "/usr/share/ublue-os/just/60-custom.just"
 EOF
 
-# 3. Create the 'gj' shortcut safely
-# We do NOT delete /usr/bin/ujust. We simply point 'gj' to it.
-ln -s /usr/bin/ujust /usr/bin/gj
+# 3. Forge the new 'gj' executable
+cat <<'EOF' > /usr/bin/gj
+#!/usr/bin/bash
+just --justfile /usr/share/ublue-os/just/00-entry.just "${@}"
+EOF
+
+chmod +x /usr/bin/gj
+ln -s /usr/bin/gj /usr/bin/ujust

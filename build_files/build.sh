@@ -39,4 +39,4 @@ fi
 echo 'VARIANT_ID="geonix"' >> /usr/lib/os-release
 echo 'NAME="Geonix"' >> /usr/lib/os-release
 
-source ./branding.sh
+source /ctx/branding.sh

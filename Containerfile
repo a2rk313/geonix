@@ -1,5 +1,10 @@
-# Base Image Argument
+# Base Image Arguments
+# Build args must be declared before the first FROM to be usable in FROM lines
 ARG BASE_IMAGE=ghcr.io/ublue-os/bluefin:latest
+ARG BASE_VARIANT=bluefin
+ARG IMAGE_NAME=geonix-gnome
+ARG IMAGE_REGISTRY=ghcr.io/a2rk313
+ARG DEFAULT_TAG=latests
 
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
@@ -7,6 +12,12 @@ COPY build_files /
 
 # Importing Base Image Argument
 FROM ${BASE_IMAGE}
+
+# Export build args as ENV so build.sh can read them at build time
+ENV BASE_VARIANT=${BASE_VARIANT}
+ENV IMAGE_NAME=${IMAGE_NAME}
+ENV IMAGE_REGISTRY=${IMAGE_REGISTRY}
+ENV DEFAULT_TAG=${DEFAULT_TAG}
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest

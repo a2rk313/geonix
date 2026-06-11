@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-echo "--> Executing dedicated branding.sh pipeline..."
+echo "Executing dedicated branding.sh pipeline..."
 
 # --- 1. CORE VARIABLES ---
 IMAGE_VENDOR="${IMAGE_REGISTRY##*/}"   # Derive from build arg dynamically
@@ -40,7 +40,7 @@ sed -i "/^REDHAT_BUGZILLA_PRODUCT=/d; /^REDHAT_BUGZILLA_PRODUCT_VERSION=/d; /^RE
 INFO_FILE="/usr/share/ublue-os/image-info.json"
 
 if [[ -f "$INFO_FILE" ]]; then
-    echo "--> Mutating upstream image-info.json..."
+    echo "Mutating upstream image-info.json..."
 
     # We use jq to safely overwrite keys while preserving base-image properties
     jq \
@@ -52,7 +52,7 @@ if [[ -f "$INFO_FILE" ]]; then
         "$INFO_FILE" > /tmp/image-info.json \
     && mv /tmp/image-info.json "$INFO_FILE"
 else
-    echo "--> WARNING: $INFO_FILE not found. Skipping JSON mutation."
+    echo "WARNING: $INFO_FILE not found. Skipping JSON mutation."
 fi
 
 # --- 4. MOTD TEMPLATE ---
@@ -76,14 +76,78 @@ ${MOTD_TIP}
 - [Geonix Repository](https://github.com/a2rk313/geonix)
 - [Report an Issue](https://github.com/a2rk313/geonix/issues)
 EOF
-echo "--> MOTD template written"
+echo "MOTD template written"
 
 # --- 5. PLYMOUTH ---
 PLYMOUTH_THEME="/usr/share/plymouth/themes/spinner"
 if [[ -d "$PLYMOUTH_THEME" ]]; then
     cp /build-assets/logo/logo_small_128.png "${PLYMOUTH_THEME}/watermark.png"
     cp /build-assets/logo/logo_small_128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
-    echo "--> Plymouth branding applied"
+    cp /build-assets/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-watermark.png"
+    cp /build-assets/logo/logo_small_128.png "/usr/share/icons/hicolor/scalable/apps/geonix-logo.png"
+    echo "Plymouth branding applied"
 else
-    echo "--> WARNING: Plymouth spinner theme not found, skipping"
+    echo "WARNING: Plymouth spinner theme not found, skipping"
+fi
+
+# --- 7. DESKTOP ENVIRONMENT BRANDING ENGINE ---
+echo "Initializing Multi-Target DE Detection..."
+
+# Normalize the target environment variables to lowercase for safe matching
+DE_TARGET="unknown"
+
+if [[ "${IMAGE_NAME,,}" == *"gnome"* || "${BASE_VARIANT,,}" == "bluefin" || "${BASE_VARIANT,,}" == "silverblue" ]]; then
+    DE_TARGET="gnome"
+elif [[ "${IMAGE_NAME,,}" == *"plasma"* || "${BASE_VARIANT,,}" == "kinoite" || "${BASE_VARIANT,,}" == "bazzite" ]]; then
+    DE_TARGET="kde"
+fi
+
+echo "Detected Desktop Environment Target: [ $DE_TARGET ]"
+
+# ---------------------------------------------------------
+# BRANCH A: GNOME / BLUEFIN COMPILATION
+# ---------------------------------------------------------
+if [[ "$DE_TARGET" == "gnome" ]]; then
+    echo "Executing GNOME Schema Overrides..."
+
+    EXT_DIR="/usr/share/gnome-shell/extensions/logomenu@aryan_k"
+    if [ -d "$EXT_DIR" ]; then
+        cp "$EXT_DIR/schemas/org.gnome.shell.extensions.logo-menu.gschema.xml" \
+            /usr/share/glib-2.0/schemas/ || true
+    fi
+
+    # Compile the dconf registry override
+    cat > /usr/share/glib-2.0/schemas/99-geonix-logo.gschema.override << 'EOF'
+[org.gnome.shell.extensions.logo-menu]
+use-custom-icon=true
+menu-button-icon-image=2
+custom-icon-path='/usr/share/icons/hicolor/scalable/apps/geonix-logo.png'
+menu-button-terminal='ptyxis'
+menu-button-software-center='gnome-software'
+EOF
+
+    glib-compile-schemas /usr/share/glib-2.0/schemas/
+    echo "GNOME configuration locked."
+
+# ---------------------------------------------------------
+# BRANCH B: KDE PLASMA COMPILATION
+# ---------------------------------------------------------
+elif [[ "$DE_TARGET" == "kde" ]]; then
+    echo "Executing KDE Plasma Plaintext Overrides..."
+
+    # --- KDE Kickoff (Application Launcher) Modification ---
+    # KDE stores default plasmoid settings in XML config files.
+    # We use sed to rewrite the default icon string in the immutable tree.
+    KICKOFF_XML="/usr/share/plasma/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
+
+    if [[ -f "$KICKOFF_XML" ]]; then
+        # Swap the default "start-here-kde" icon with our newly registered XDG asset
+        sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
+        echo "KDE Kickoff icon overridden."
+    else
+        echo "WARNING: KDE Kickoff main.xml not found."
+    fi
+
+else
+    echo "WARNING: Unknown DE target. Skipping graphical branding."
 fi

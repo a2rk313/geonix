@@ -81,8 +81,8 @@ echo "--> MOTD template written"
 # --- 5. PLYMOUTH ---
 PLYMOUTH_THEME="/usr/share/plymouth/themes/spinner"
 if [[ -d "$PLYMOUTH_THEME" ]]; then
-    cp /ctx/logo/geonix-logo-128.png "${PLYMOUTH_THEME}/watermark.png"
-    cp /ctx/logo/geonix-logo-128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
+    cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/watermark.png"
+    cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
     echo "--> Plymouth branding applied"
 else
     echo "--> WARNING: Plymouth spinner theme not found, skipping"

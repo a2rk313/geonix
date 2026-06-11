@@ -54,3 +54,36 @@ if [[ -f "$INFO_FILE" ]]; then
 else
     echo "--> WARNING: $INFO_FILE not found. Skipping JSON mutation."
 fi
+
+# --- 4. MOTD TEMPLATE ---
+cat > /usr/share/ublue-os/motd/template.md << 'EOF'
+# 🌍 Welcome to Geonix
+**GIS and Remote Sensing out of the box.**
+
+🚀 `${MOTD_IMAGE_NAME}:${MOTD_IMAGE_TAG}`
+
+| Command | Description |
+|---------|-------------|
+| `gj --list` | Show all available commands |
+| `gj status` | Show installed GIS recipes |
+| `gj install-bundle-rs` | Install Remote Sensing stack |
+| `gj install-bundle-lidar` | Install LiDAR stack |
+| `gj install-qgis-plugins` | Install QGIS plugins |
+| `qgis` | Launch QGIS Desktop |
+
+${MOTD_TIP}
+
+- [Geonix Repository](https://github.com/a2rk313/geonix)
+- [Report an Issue](https://github.com/a2rk313/geonix/issues)
+EOF
+echo "--> MOTD template written"
+
+# --- 5. PLYMOUTH ---
+PLYMOUTH_THEME="/usr/share/plymouth/themes/spinner"
+if [[ -d "$PLYMOUTH_THEME" ]]; then
+    cp /ctx/logo/geonix-logo-128.png "${PLYMOUTH_THEME}/watermark.png"
+    cp /ctx/logo/geonix-logo-128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
+    echo "--> Plymouth branding applied"
+else
+    echo "--> WARNING: Plymouth spinner theme not found, skipping"
+fi

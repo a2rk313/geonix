@@ -128,7 +128,7 @@ jobs:
           IMAGE_ID=$(buildah images --format "{{.ID}}" localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} 2>/dev/null || \
             podman images --format "{{.ID}}" ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }})
           sudo podman pull docker-daemon:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} 2>/dev/null || \
-          buildah push ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+          sudo buildah push ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
             containers-storage:[overlay@/var/lib/containers/storage]${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 
       - name: Get Fedora version

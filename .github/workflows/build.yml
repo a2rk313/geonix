@@ -121,12 +121,20 @@ jobs:
       # Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
       # This does not make your image faster to download, just provides better resumability and fixes a few errors.
       # Documentation for Rechunk is provided on their github repository at https://github.com/hhd-dev/rechunk
-      # You can enable it by uncommenting the following lines:
+      # You can enable it by uncommenting the following lines.
+      # This is necessary so that the podman socket can find the rechunked image on its storage
+      - name: Load image into rootful podman
+        run: |
+          IMAGE_ID=$(buildah images --format "{{.ID}}" localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} 2>/dev/null || \
+            podman images --format "{{.ID}}" ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }})
+          sudo podman pull docker-daemon:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} 2>/dev/null || \
+          buildah push ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+            containers-storage:[overlay@/var/lib/containers/storage]${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+
       - name: Get Fedora version
         id: fedora_version
         run: |
-          VERSION=$(podman run --rm localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
-            rpm -E %fedora)
+          VERSION=$(sudo podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} rpm -E %fedora)
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Run Rechunker
@@ -139,15 +147,6 @@ jobs:
           skip_compression: true
           version: ${{ steps.fedora_version.outputs.version }}
           labels: ${{ steps.metadata.outputs.labels }} # Rechunk strips out all the labels during build, this needs to be reapplied here with newline separator
-
-      # This is necessary so that the podman socket can find the rechunked image on its storage
-      - name: Load in podman and tag
-        run: |
-          IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
-          sudo rm -rf ${{ steps.rechunk.outputs.output }}
-          for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
-          done
 
       # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
       # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work

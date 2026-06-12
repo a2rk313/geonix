@@ -125,12 +125,13 @@ jobs:
       # This is necessary so that the podman socket can find the rechunked image on its storage
       - name: Load image into rootful podman
         run: |
-          buildah push ${{ env.IMAGE_NAME }}:${{ steps.metadata.outputs.tags }} \
+          buildah push ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
             oci-archive:/tmp/image.tar
           sudo podman load -i /tmp/image.tar
           sudo podman tag ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
             localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           rm -f /tmp/image.tar
+
       - name: Get Fedora version
         id: fedora_version
         run: |

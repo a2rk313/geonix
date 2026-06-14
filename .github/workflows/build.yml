@@ -209,7 +209,7 @@ jobs:
         run: |
           for tag in ${{ steps.metadata.outputs.tags }}; do
             sudo skopeo copy \
-              containers-storage:${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+              containers-storage:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
               docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${tag}
           done
 

@@ -996,3 +996,28 @@ update-all:
     echo "Recipe update complete."
     echo "  Host package updates (GRASS, OTB, PostGIS): rebase to latest geonix image."
     echo "  GeoAI Distrobox: distrobox enter geoai -- pip3 install --upgrade torchgeo"
+
+# Pinned rechunker image — update digest via Renovate or manually
+rechunker_image := "ghcr.io/hhd-dev/rechunk:v1.2.2@sha256:e799d89f9a9965b5b0e89941a9fc6eaab62e9d2d73a0bfb92e6a495be0706907"
+
+# Rechunk a built image for optimized OSTree/bootc distribution
+[group('Build Image')]
+rechunk $image=image_name $tag=default_tag $registry=("ghcr.io/a2rk313"):
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Login to GHCR so rechunker can pull the previous image for diffing
+    echo "$GHCR_TOKEN" | sudo podman login ghcr.io \
+        -u "$GHCR_USER" --password-stdin
+
+    sudo podman run \
+        --rm \
+        --privileged \
+        --volume /var/lib/containers/storage:/var/lib/containers/storage \
+        "${rechunker_image}" \
+        rechunk \
+        --ref "localhost/${image}:${tag}" \
+        --output "${registry}/${image}" \
+        --tag "${tag}" \
+        --revision "$(git rev-parse --short HEAD 2>/dev/null || echo unknown)" \
+        --prev-ref "${registry}/${image}:${tag}"

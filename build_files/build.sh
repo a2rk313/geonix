@@ -25,9 +25,6 @@ python3-shapely python3-fiona python3-pandas python3-numpy fuse fuse-libs \
 
 dnf5 -y copr disable megger/saga
 
-# No age attestation or verification allowed here
-systemctl mask systemd-homed
-
 # Enabled systemd services
 systemctl enable podman.socket
 

@@ -242,13 +242,19 @@ jobs:
         with:
           cosign-release: "v2.6.1"
 
-      - name: Sign container image
+      - name: Authenticate Cosign to GHCR
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          cosign login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign container image (Keyless OIDC)
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          # Required to bypass the interactive prompt for Keyless signing in automated pipelines
+          COSIGN_YES: "true"
         run: |
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            cosign sign -y --key env://SIGNING_SECRET $IMAGE_FULL:$tag
+            echo "Cryptographically signing ${IMAGE_FULL}:${tag} ..."
+            cosign sign ${IMAGE_FULL}:${tag}
           done
-        env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}

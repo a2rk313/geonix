@@ -191,12 +191,12 @@ jobs:
             --volume /var/lib/containers/storage:/var/lib/containers/storage \
             ghcr.io/hhd-dev/rechunk:v1.2.2@sha256:e799d89f9a9965b5b0e89941a9fc6eaab62e9d2d73a0bfb92e6a495be0706907 \
             rechunk \
-            --ref "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            --output "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}" \
-            --tag "${{ env.DEFAULT_TAG }}" \
+            -b "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            -r "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}" \
+            --version "${{ env.DEFAULT_TAG }}" \
             --revision "${{ github.sha }}" \
-            --prev-ref "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            --labels "${{ steps.metadata.outputs.labels }}"
+            -p "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            || true  # -p fails on first build when no previous image exists
 
       # Push rechunked image via skopeo — rechunker outputs to podman storage
       - name: Push rechunked image to GHCR

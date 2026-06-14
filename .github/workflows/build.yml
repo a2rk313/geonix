@@ -163,13 +163,12 @@ jobs:
             DEFAULT_TAG=${{ env.DEFAULT_TAG }}
           oci: false
 
-      # Load built image into rootful podman storage for rechunker access
       - name: Load image into rootful podman
         run: |
           buildah push ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
             oci-archive:/tmp/image.tar
-          sudo podman load -i /tmp/image.tar
-          sudo podman tag ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+          LOADED=$(sudo podman load -i /tmp/image.tar | grep -oP 'sha256:[a-f0-9]+')
+          sudo podman tag "$LOADED" \
             localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           rm -f /tmp/image.tar
 

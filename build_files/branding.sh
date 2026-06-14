@@ -35,18 +35,18 @@ else
 fi
 
 # --- 7. DESKTOP ENVIRONMENT BRANDING ENGINE ---
-echo "Initializing Multi-Target DE Detection..."
+echo "Initializing DE detection..."
+echo "  BASE_VARIANT=${BASE_VARIANT:-unset}"
+echo "  IMAGE_NAME=${IMAGE_NAME:-unset}"
 
-# Normalize the target environment variables to lowercase for safe matching
 DE_TARGET="unknown"
-
-if [[ "${IMAGE_NAME,,}" == *"gnome"* || "${BASE_VARIANT,,}" == "bluefin" || "${BASE_VARIANT,,}" == "silverblue" ]]; then
+if [[ "${BASE_VARIANT}" == "bluefin" ]]; then
     DE_TARGET="gnome"
-elif [[ "${IMAGE_NAME,,}" == *"plasma"* || "${BASE_VARIANT,,}" == "kinoite" || "${BASE_VARIANT,,}" == "bazzite" ]]; then
+elif [[ "${BASE_VARIANT}" == "aurora" ]]; then
     DE_TARGET="kde"
 fi
 
-echo "Detected Desktop Environment Target: [ $DE_TARGET ]"
+echo "Detected Desktop Environment Target: [ ${DE_TARGET} ]"
 
 # ---------------------------------------------------------
 # BRANCH A: GNOME / BLUEFIN COMPILATION

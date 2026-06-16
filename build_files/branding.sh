@@ -89,7 +89,7 @@ PIXMAPS="/usr/share/pixmaps"
 LOGO_128="/build-assets/logo/logo_small_128.png"
 LOGO_256="/build-assets/logo/logo_small_256.png"
 
-cp "$LOGO_256" "${PIXMAPS}/fedora-gdm-logo.png"
+cp "$LOGO_128" "${PIXMAPS}/fedora-gdm-logo.png"
 cp "$LOGO_128" "${PIXMAPS}/fedora-logo.png"
 cp "$LOGO_128" "${PIXMAPS}/fedora-logo-icon.png"
 cp "$LOGO_128" "${PIXMAPS}/fedora-logo-small.png"

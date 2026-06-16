@@ -161,7 +161,9 @@ jobs:
             IMAGE_NAME=${{ matrix.image_name }}
             IMAGE_REGISTRY=${{ env.IMAGE_REGISTRY }}
             DEFAULT_TAG=${{ env.DEFAULT_TAG }}
-          oci: false
+          oci: true
+          extra-args: |
+            --compression-format=zstd:chunked
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0

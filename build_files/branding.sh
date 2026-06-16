@@ -35,6 +35,8 @@ else
 fi
 
 SCHEMA_PATH="/usr/share/gnome-shell/extensions/logomenu@aryan_k/schemas"
+# Force GNOME to compile the extension's XML schemas into the required binary format
+glib-compile-schemas $SCHEMA_PATH
 gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu use-custom-icon true
 gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu menu-button-icon-image 2
 gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu custom-icon-path '/usr/share/icons/hicolor/scalable/apps/geonix-logo.png'
@@ -43,11 +45,9 @@ gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu cust
 # KDE stores default plasmoid settings in XML config files.
 # We use sed to rewrite the default icon string in the immutable tree.
 KICKOFF_XML="/usr/share/plasma/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
-
-if [[ -f "$KICKOFF_XML" ]]; then
-    # Swap the default "start-here-kde" icon with our newly registered XDG asset
-    sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
-    echo "KDE Kickoff icon overridden."
+# Swap the default "start-here-kde" icon with our newly registered XDG asset
+sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
+echo "KDE Kickoff icon overridden."
 
 # --- GDM / FEDORA LOGO REPLACEMENTS ---
 PIXMAPS="/usr/share/pixmaps"

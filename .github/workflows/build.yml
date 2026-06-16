@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Restore digest cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .cache
           key: upstream-digests-${{ runner.os }}
@@ -73,7 +73,7 @@ jobs:
           fi
 
       - name: Save digest cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.check.outputs.changed == 'true'
         with:
           path: .cache

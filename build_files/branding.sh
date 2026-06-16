@@ -54,23 +54,11 @@ echo "Detected Desktop Environment Target: [ ${DE_TARGET} ]"
 if [[ "$DE_TARGET" == "gnome" ]]; then
     echo "Executing GNOME Schema Overrides..."
 
-    EXT_DIR="/usr/share/gnome-shell/extensions/logomenu@aryan_k"
-    if [ -d "$EXT_DIR" ]; then
-        cp "$EXT_DIR/schemas/org.gnome.shell.extensions.logo-menu.gschema.xml" \
-            /usr/share/glib-2.0/schemas/ || true
-    fi
+    SCHEMA_PATH="/usr/share/gnome-shell/extensions/logomenu@aryan_k/schemas"
+    gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu use-custom-icon true
+    gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu menu-button-icon-image 2
+    gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu custom-icon-path '/usr/share/icons/hicolor/scalable/apps/geonix-logo.png'
 
-    # Compile the dconf registry override
-    cat > /usr/share/glib-2.0/schemas/99-geonix-logo.gschema.override << 'EOF'
-[org.gnome.shell.extensions.logo-menu]
-use-custom-icon=true
-menu-button-icon-image=2
-custom-icon-path='/usr/share/icons/hicolor/scalable/apps/geonix-logo.png'
-menu-button-terminal='ptyxis'
-menu-button-software-center='gnome-software'
-EOF
-
-    glib-compile-schemas /usr/share/glib-2.0/schemas/
     echo "GNOME configuration locked."
 
 # ---------------------------------------------------------
@@ -95,3 +83,16 @@ elif [[ "$DE_TARGET" == "kde" ]]; then
 else
     echo "WARNING: Unknown DE target. Skipping graphical branding."
 fi
+
+# --- GDM / FEDORA LOGO REPLACEMENTS ---
+PIXMAPS="/usr/share/pixmaps"
+LOGO_128="/build-assets/logo/logo_small_128.png"
+LOGO_256="/build-assets/logo/logo_small_256.png"
+
+cp "$LOGO_256" "${PIXMAPS}/fedora-gdm-logo.png"
+cp "$LOGO_128" "${PIXMAPS}/fedora-logo.png"
+cp "$LOGO_128" "${PIXMAPS}/fedora-logo-icon.png"
+cp "$LOGO_128" "${PIXMAPS}/fedora-logo-small.png"
+cp "$LOGO_256" "${PIXMAPS}/fedora-logo-sprite.png"
+cp "$LOGO_128" "${PIXMAPS}/fedora_logo_med.png"
+cp "$LOGO_128" "${PIXMAPS}/fedora_whitelogo_med.png"

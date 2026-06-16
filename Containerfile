@@ -8,7 +8,7 @@ ARG DEFAULT_TAG=stable
 
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
-COPY build_files /ase like Arch, but with a much more controlled pipeline: packages go through automated testing (openQA) before release. It feels modern without the same “anyone can upload a build script” exposure surface.
+COPY build_files /
 
 # Importing Base Image Argument
 FROM ${BASE_IMAGE}

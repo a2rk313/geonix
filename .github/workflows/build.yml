@@ -165,12 +165,9 @@ jobs:
 
       - name: Load image into rootful podman
         run: |
-          echo "=== Buildah images ==="
-          buildah images
-          echo "=== Pushing to rootful podman ==="
-          sudo buildah push \
-            localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
-            containers-storage:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          podman image scp \
+            ${UID}@localhost::localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+            root@localhost::localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 
       # Login before rechunk so it can pull prev-ref from GHCR for diffing
       - name: Login to GHCR for rechunker

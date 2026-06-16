@@ -165,7 +165,7 @@ jobs:
 
       - name: Load image into rootful podman
         run: |
-          podman image scp \
+          sudo podman image scp \
             ${UID}@localhost::localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
             root@localhost::localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 

@@ -36,18 +36,24 @@ fi
 
 SCHEMA_PATH="/usr/share/gnome-shell/extensions/logomenu@aryan_k/schemas"
 # Force GNOME to compile the extension's XML schemas into the required binary format
-glib-compile-schemas $SCHEMA_PATH
-gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu use-custom-icon true
-gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu menu-button-icon-image 2
-gsettings --schemadir $SCHEMA_PATH set org.gnome.shell.extensions.logo-menu custom-icon-path '/usr/share/icons/hicolor/scalable/apps/geonix-logo.png'
+# 1. Create a system-wide override file
+# The priority is dictated by the number prefix (99 is highest priority)
+cat > /usr/share/glib-2.0/schemas/99-geonix-branding.gschema.override << 'EOF'
+[org.gnome.shell.extensions.logomenu]
+menu-button-icon-image=2
+custom-icon-image='/usr/share/icons/hicolor/scalable/apps/geonix-logo.png'
+EOF
+
+# 2. Compile the override into the system cache
+glib-compile-schemas /usr/share/glib-2.0/schemas/
 
 # --- KDE Kickoff (Application Launcher) Modification ---
 # KDE stores default plasmoid settings in XML config files.
 # We use sed to rewrite the default icon string in the immutable tree.
-KICKOFF_XML="/usr/share/plasma/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
+KICKOFF_XML="/usr/share/plasma6/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
 # Swap the default "start-here-kde" icon with our newly registered XDG asset
 sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
-echo "KDE Kickoff icon overridden."
+echo "KDE Kickoff icon overridden (Plasma 6 path)."
 
 # --- GDM / FEDORA LOGO REPLACEMENTS ---
 PIXMAPS="/usr/share/pixmaps"

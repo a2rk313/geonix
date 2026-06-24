@@ -39,13 +39,16 @@ SCHEMA_PATH="/usr/share/gnome-shell/extensions/logomenu@aryan_k/schemas"
 # 1. Create a system-wide override file
 # The priority is dictated by the number prefix (99 is highest priority)
 cat > /usr/share/glib-2.0/schemas/99-geonix-branding.gschema.override << 'EOF'
-[org.gnome.shell.extensions.logomenu]
+[org.gnome.shell.extensions.logo-menu]
+use-custom-icon=true
 menu-button-icon-image=2
-custom-icon-image='/usr/share/icons/hicolor/scalable/apps/geonix-logo.png'
+custom-icon-path='/usr/share/icons/hicolor/256x256/apps/geonix-logo.png'
+menu-button-terminal='ptyxis'
+menu-button-software-center='gnome-software'
 EOF
 
 # 2. Compile the override into the system cache
-glib-compile-schemas /usr/share/glib-2.0/schemas/
+glib-compile-schemas /usr/share/glib-2.0/schemas/ 2>/dev/null || true
 
 # --- KDE Kickoff (Application Launcher) Modification ---
 # KDE stores default plasmoid settings in XML config files.

@@ -165,13 +165,66 @@ jobs:
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push To GHCR
+      - name: Push staging image
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ github.token }}
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          image: ${{ env.IMAGE_NAME }}
+          tags: staging
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Chunk image for efficient updates
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          # Login rootful podman to GHCR so it can pull the staging image
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io \
+            -u ${{ github.actor }} --password-stdin
+          sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+          sudo rpm-ostree compose build-chunked-oci \
+            --bootc \
+            --format-version=2 \
+            --from=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:staging \
+            --output containers-storage:${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            sudo podman push \
+              ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+              docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${tag}
+          done
+
+      - name: Clean up staging tag
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          STAGING_ID=$(gh api \
+            /user/packages/container/${{ env.IMAGE_NAME }}/versions \
+            | jq '.[] | select(.metadata.container.tags[] == "staging") | .id')
+          gh api --method DELETE \
+            /user/packages/container/${{ env.IMAGE_NAME }}/versions/${STAGING_ID}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pull requests skip chunking — standard push for PR validation only
+      - name: Login to GitHub Container Registry (PR)
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        if: github.event_name == 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push To GHCR (PR only)
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+        if: github.event_name == 'pull_request'
         id: push
         env:
           REGISTRY_USER: ${{ github.actor }}
@@ -182,27 +235,3 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
-          extra-args: |
-            --compression-format=zstd
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        with:
-          cosign-release: "v2.6.1"
-
-      - name: Authenticate Cosign to GHCR
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        run: |
-          cosign login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Sign container image (Keyless OIDC)
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        env:
-          COSIGN_YES: "true"
-        run: |
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
-          for tag in ${{ steps.metadata.outputs.tags }}; do
-            echo "Cryptographically signing ${IMAGE_FULL}:${tag} ..."
-            cosign sign ${IMAGE_FULL}:${tag}
-          done

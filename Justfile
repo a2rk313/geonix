@@ -362,50 +362,6 @@ _ostree-install +packages:
 
 # ─── GIS Workstation: Desktop GIS ──────────────────────────────────────────────
 
-# Install GRASS GIS — latest available from neteler COPR
-[group('GIS Workstation')]
-install-grass:
-    #!/usr/bin/bash
-    set -euo pipefail
-    echo "=== Installing GRASS GIS ==="
-    echo "Source: COPR neteler/grass (latest)"
-    echo "This layers packages onto the host — a reboot may be required."
-    echo ""
-    FEDORA_VER=$(rpm -E %fedora)
-
-    # Find the latest grass COPR from neteler dynamically
-    COPR_NAME=$(curl -s "https://copr.fedorainfracloud.org/api_3/project/search?query=grass&owner=neteler" \
-        | python3 -c "
-    import sys, json
-    data = json.load(sys.stdin)
-    projects = [p['name'] for p in data.get('items', []) if p['name'].startswith('grass')]
-    projects.sort(reverse=True)
-    print(projects[0] if projects else 'grass84')
-    ")
-    echo "Using COPR: neteler/${COPR_NAME}"
-    REPO_URL="https://copr.fedorainfracloud.org/coprs/neteler/${COPR_NAME}/repo/fedora-${FEDORA_VER}/neteler-${COPR_NAME}-fedora-${FEDORA_VER}.repo"
-
-    sudo rpm-ostree install --idempotent --apply-live \
-        --install-from-repo="$REPO_URL" \
-        grass grass-gui python3-grass || {
-        echo ""
-        echo "  --apply-live failed. Queuing for next boot..."
-        sudo rpm-ostree install --idempotent \
-            --install-from-repo="$REPO_URL" \
-            grass grass-gui python3-grass
-        echo ""
-        echo "  REBOOT REQUIRED to complete installation."
-        echo "  Run: systemctl reboot"
-    }
-    if ! grep -q "GRASS_PYTHON" "${HOME}/.bashrc"; then
-        echo 'export GRASS_PYTHON=/usr/bin/python3' >> "${HOME}/.bashrc"
-    fi
-    just _mark-installed grass
-    echo ""
-    echo "GRASS GIS installed from neteler/${COPR_NAME}"
-    echo "  After reboot test: grass --version"
-    echo "  QGIS: Plugins > Manage Plugins > GRASS provider"
-
 # Install Orfeo Toolbox — latest available from orfeotoolbox COPR
 [group('GIS Workstation')]
 install-otb:
@@ -926,7 +882,6 @@ install-legacy-env:
 # Cartographer: GRASS + Jupyter (SAGA is in the base image)
 [group('GIS Workstation')]
 install-bundle-carto:
-    just install-grass
     just install-jupyter
     @echo "Cartographer bundle complete."
 
@@ -934,7 +889,6 @@ install-bundle-carto:
 [group('GIS Workstation')]
 install-bundle-rs:
     just install-otb
-    just install-grass
     just install-proj-grids
     just install-jupyter
     @echo "Remote Sensing bundle complete."

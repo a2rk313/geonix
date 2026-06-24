@@ -49,6 +49,19 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build.sh
 
+# After the dnf5 install block
+RUN setfattr -n user.component -v "gdal"    /usr/lib64/libgdal.so* 2>/dev/null || true && \
+    setfattr -n user.component -v "qgis"    /usr/share/qgis && \
+    setfattr -n user.component -v "qgis"    /usr/lib64/qgis && \
+    setfattr -n user.component -v "proj"    /usr/share/proj && \
+    setfattr -n user.component -v "grass"   /usr/share/grass* 2>/dev/null || true && \
+    setfattr -n user.component -v "grass"   /usr/lib64/grass* 2>/dev/null || true && \
+    setfattr -n user.component -v "gis-py"  /usr/lib/python3*/site-packages/fiona* 2>/dev/null || true && \
+    setfattr -n user.component -v "gis-py"  /usr/lib/python3*/site-packages/rasterio* 2>/dev/null || true && \
+    setfattr -n user.component -v "gis-py"  /usr/lib/python3*/site-packages/shapely* 2>/dev/null || true && \
+    setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/watermark.png 2>/dev/null || true && \
+    setfattr -n user.component -v "branding" /usr/share/ublue-os/motd 2>/dev/null || true
+
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=bind,source=logo,target=/ctx/logo \
     /ctx/image-info.sh && \

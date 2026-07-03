@@ -180,38 +180,27 @@ jobs:
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           image: ${{ env.IMAGE_NAME }}
-          tags: staging
+          tags: ${{ env.DEFAULT_TAG }}
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
 
       - name: Chunk image for efficient updates
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
-          # Login rootful podman to GHCR so it can pull the staging image
+          # Login rootful podman to GHCR so it can pull the latest image
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io \
             -u ${{ github.actor }} --password-stdin
-          sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+          sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sudo rpm-ostree compose build-chunked-oci \
             --bootc \
             --format-version=2 \
-            --from=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:staging \
+            --from=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
             --output containers-storage:${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           for tag in ${{ steps.metadata.outputs.tags }}; do
             sudo podman push \
               ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
               docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${tag}
           done
-
-      - name: Clean up staging tag
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        run: |
-          STAGING_ID=$(gh api \
-            /user/packages/container/${{ env.IMAGE_NAME }}/versions \
-            | jq '.[] | select(.metadata.container.tags[] == "staging") | .id')
-          gh api --method DELETE \
-            /user/packages/container/${{ env.IMAGE_NAME }}/versions/${STAGING_ID}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Pull requests skip chunking — standard push for PR validation only
       - name: Login to GitHub Container Registry (PR)

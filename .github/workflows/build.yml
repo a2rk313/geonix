@@ -161,7 +161,7 @@ jobs:
             IMAGE_NAME=${{ matrix.image_name }}
             IMAGE_REGISTRY=${{ env.IMAGE_REGISTRY }}
             DEFAULT_TAG=${{ env.DEFAULT_TAG }}
-          oci: true
+          oci: false
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
@@ -187,29 +187,50 @@ jobs:
       - name: Chunk image for efficient updates
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
+          # Login rootful podman to GHCR
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io \
             -u ${{ github.actor }} --password-stdin
+
+          # Pull the staging image into rootful podman storage
           sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          # Run rpm-ostree compose build-chunked-oci inside a Fedora container
-          # with access to the host podman storage
+
+          # Run build-chunked-oci inside fedora-bootc which has rpm-ostree pre-installed
+          # Shared storage volume means output is visible to host podman
           sudo podman run \
             --rm \
             --privileged \
+            --pull=newer \
             --volume /var/lib/containers/storage:/var/lib/containers/storage \
-            registry.fedoraproject.org/fedora:latest \
-            bash -c "
-              dnf install -y rpm-ostree && \
-              rpm-ostree compose build-chunked-oci \
-                --bootc \
-                --format-version=2 \
-                --from=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
-                --output containers-storage:${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-chunked
-            "
+            registry.fedoraproject.org/fedora-bootc:latest \
+            rpm-ostree compose build-chunked-oci \
+              --bootc \
+              --format-version=2 \
+              --from=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+              --output containers-storage:${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-chunked
+
+          # Push all tags from the chunked image
           for tag in ${{ steps.metadata.outputs.tags }}; do
             sudo podman push \
               ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-chunked \
               docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${tag}
           done
+
+          - name: Install Cosign
+                  uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+                  if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+                  with:
+                    cosign-release: "v2.6.1"
+
+                - name: Sign container image
+                  if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+                  run: |
+                    IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
+                    for tag in ${{ steps.metadata.outputs.tags }}; do
+                      cosign sign -y --key env://SIGNING_SECRET $IMAGE_FULL:$tag
+                    done
+                  env:
+                    COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+                    SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
 
       # Pull requests skip chunking — standard push for PR validation only
       - name: Login to GitHub Container Registry (PR)

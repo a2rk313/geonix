@@ -31,15 +31,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/set-components.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/log \
-    --mount=type=tmpfs,dst=/tmp \
-    /ctx/image-info.sh
-
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/log \
-    --mount=type=tmpfs,dst=/tmp \
+    --mount=type=bind,source=logo,target=/ctx/logo \
+    /ctx/image-info.sh && \
     /ctx/branding.sh
 
 RUN bootc container lint

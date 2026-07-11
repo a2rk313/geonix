@@ -20,8 +20,6 @@ ENV DEFAULT_TAG=${DEFAULT_TAG}
 
 RUN rm /opt && mkdir /opt
 
-COPY logo/ /build-assets/logo/
-
 # GIS stack + kernel optimizations + just recipes
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \

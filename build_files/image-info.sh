@@ -5,6 +5,7 @@ echo "Executing image-info and branding pipeline..."
 
 # --- 1. CORE VARIABLES ---
 IMAGE_VENDOR="${IMAGE_REGISTRY##*/}"
+IMAGE_VENDOR="${IMAGE_VENDOR:-a2rk313}"
 IMAGE_LIKE="aurora ublue fedora bluefin image-based immutable gis rs workstation"
 HOME_URL="https://github.com/a2rk313/geonix"
 SUPPORT_URL="https://github.com/a2rk313/geonix/issues"

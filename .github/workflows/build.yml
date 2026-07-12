@@ -186,11 +186,17 @@ jobs:
 
       - name: Chunk image for efficient updates
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io \
             -u ${{ github.actor }} --password-stdin
 
-          sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          sudo podman pull "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
+
+          CHUNKED_REF="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-chunked"
 
           sudo podman run \
             --rm \
@@ -201,14 +207,13 @@ jobs:
             rpm-ostree compose build-chunked-oci \
               --bootc \
               --format-version=2 \
-              --from=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
-              --output containers-storage:${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-chunked
+              --from="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}" \
+              --output "containers-storage:${CHUNKED_REF}"
 
-          # Use DOCKER_METADATA_OUTPUT_TAGS which is space-separated on one line
           for tag in ${DOCKER_METADATA_OUTPUT_TAGS}; do
             sudo podman push \
-              ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-chunked \
-              docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${tag}
+              "${CHUNKED_REF}" \
+              "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}"
           done
 
           - name: Install Cosign

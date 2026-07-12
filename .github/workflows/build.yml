@@ -210,7 +210,8 @@ jobs:
               --from="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}" \
               --output "containers-storage:${CHUNKED_REF}"
 
-          for tag in ${DOCKER_METADATA_OUTPUT_TAGS}; do
+          DATE=$(date -u +%Y%m%d)
+          for tag in "${DEFAULT_TAG}" "${DEFAULT_TAG}.${DATE}" "${DATE}"; do
             sudo podman push \
               "${CHUNKED_REF}" \
               "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}"

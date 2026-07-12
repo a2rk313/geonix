@@ -13,7 +13,7 @@ dnf5 -y copr enable megger/saga
 
 # this installs a package from fedora repos
 dnf5 install -y \
-    gdal gdal-python3 \
+    gdal \
     proj proj-data \
     geos libgeotiff \
     qgis python3-qgis \
@@ -27,20 +27,16 @@ dnf5 install -y \
     python3-netcdf4 \
     python3-matplotlib \
     python3-scipy \
-    pdal python3-pdal \
+    pdal \
     liblas \
     python3-h5py \
-    gpsd python3-gps \
-    gpsbabel \
-    mapserver python3-mapscript \
+    gpsd gpsbabel \
     python3-scikit-learn \
     python3-numpy \
     python3-pandas \
-    python3-psycopg \
     python3-sqlalchemy \
     libspatialite spatialite-tools \
     spatialindex \
-    fuse fuse-libs \
     && dnf5 clean all
 
 # Use a COPR Example:

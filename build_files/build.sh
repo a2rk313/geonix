@@ -17,7 +17,7 @@ dnf5 install -y \
     proj proj-data \
     geos libgeotiff \
     qgis python3-qgis \
-    qgis-grass grass \
+    qgis-grass grass grass-gui \
     python3-shapely \
     python3-fiona \
     python3-pyproj \
@@ -31,6 +31,7 @@ dnf5 install -y \
     liblas \
     python3-h5py \
     gpsd gpsbabel \
+    saga saga-gui \
     python3-scikit-learn \
     python3-numpy \
     python3-pandas \

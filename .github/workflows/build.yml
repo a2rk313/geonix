@@ -201,16 +201,15 @@ jobs:
           DATE=$(date -u +%Y%m%d)
           DIGEST=""
           for tag in "${DEFAULT_TAG}" "${DEFAULT_TAG}.${DATE}" "${DATE}"; do
-            DIGEST_FILE=$(mktemp)
             sudo skopeo copy \
               --dest-creds="${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
-              --digestfile="${DIGEST_FILE}" \
+              --digestfile="/tmp/digest.txt" \
               "containers-storage:${CHUNKED_REF}" \
               "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}"
             if [ -z "$DIGEST" ]; then
-              DIGEST=$(cat "${DIGEST_FILE}")
+              DIGEST=$(sudo cat /tmp/digest.txt)
             fi
-            rm -f "${DIGEST_FILE}"
+            sudo rm -f /tmp/digest.txt
           done
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
           echo "Pushed chunked image with digest: ${DIGEST}"

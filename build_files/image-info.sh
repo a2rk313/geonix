@@ -75,6 +75,11 @@ import "/usr/share/ublue-os/just/default.just"
 import "/usr/share/ublue-os/just/shared.just"
 import "/usr/share/ublue-os/just/system.just"
 import "/usr/share/ublue-os/just/update.just"
+import "/usr/share/ublue-os/just/60-geonix.just"
 import? "/usr/share/ublue-os/just/60-custom.just"
 EOF
 echo "Entry justfile written"
+
+# --- 6. GEONIX GIS RECIPES ---
+cp /ctx/60-geonix.just /usr/share/ublue-os/just/60-geonix.just
+echo "Geonix GIS recipes installed"

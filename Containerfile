@@ -30,6 +30,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/set-components.sh
 
+# Strip redundant packages from base image
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    /ctx/remove-packages.sh
+
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=bind,source=logo,target=/ctx/logo \
     /ctx/image-info.sh && \

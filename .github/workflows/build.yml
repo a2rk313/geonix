@@ -16,7 +16,7 @@ on:
 env:
   IMAGE_DESC: "A Universal Blue based distro made for the cool folks that use GIS and Remote Sensing knowledge to make the world a better place."
   IMAGE_KEYWORDS: "bootc,ublue,gis,qgis,geospatial,remote-sensing"
-  IMAGE_LOGO_URL: "https://raw.githubusercontent.com/a2rk313/geonix/main/geonix-logo-128.png"
+  IMAGE_LOGO_URL: "https://raw.githubusercontent.com/a2rk313/geonix/main/logo/logo_small_128.png"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
 
@@ -171,21 +171,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push latest image
-        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        env:
-          REGISTRY_USER: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ github.token }}
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.DEFAULT_TAG }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
-
       - name: Chunk image for efficient updates
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        id: chunk
         env:
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
@@ -211,11 +199,21 @@ jobs:
               --output "containers-storage:${CHUNKED_REF}"
 
           DATE=$(date -u +%Y%m%d)
+          DIGEST=""
           for tag in "${DEFAULT_TAG}" "${DEFAULT_TAG}.${DATE}" "${DATE}"; do
-            sudo podman push \
-              "${CHUNKED_REF}" \
+            DIGEST_FILE=$(mktemp)
+            sudo skopeo copy \
+              --dest-creds="${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+              --digestfile="${DIGEST_FILE}" \
+              "containers-storage:${CHUNKED_REF}" \
               "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}"
+            if [ -z "$DIGEST" ]; then
+              DIGEST=$(cat "${DIGEST_FILE}")
+            fi
+            rm -f "${DIGEST_FILE}"
           done
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+          echo "Pushed chunked image with digest: ${DIGEST}"
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
@@ -227,12 +225,11 @@ jobs:
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
-          for tag in ${{ steps.metadata.outputs.tags }}; do
-            cosign sign -y --key env://SIGNING_SECRET $IMAGE_FULL:$tag
-          done
+          cosign sign -y --key env://SIGNING_SECRET "${IMAGE_FULL}@${DIGEST}"
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
+          DIGEST: ${{ steps.chunk.outputs.digest }}
 
       # Pull requests skip chunking — standard push for PR validation only
       - name: Login to GitHub Container Registry (PR)

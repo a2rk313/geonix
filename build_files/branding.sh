@@ -34,11 +34,9 @@ else
     echo "WARNING: Plymouth spinner theme not found, skipping"
 fi
 
-SCHEMA_PATH="/usr/share/gnome-shell/extensions/logomenu@aryan_k/schemas"
-# Force GNOME to compile the extension's XML schemas into the required binary format
-# 1. Create a system-wide override file
-# The priority is dictated by the number prefix (99 is highest priority)
-cat > /usr/share/glib-2.0/schemas/99-geonix-branding.gschema.override << 'EOF'
+# --- GNOME Logomenu extension override (Bluefin only) ---
+if [[ "${BASE_VARIANT:-}" == "bluefin" ]]; then
+    cat > /usr/share/glib-2.0/schemas/99-geonix-branding.gschema.override << 'EOF'
 [org.gnome.shell.extensions.logo-menu]
 use-custom-icon=true
 menu-button-icon-image=2
@@ -46,17 +44,20 @@ custom-icon-path='/usr/share/icons/hicolor/256x256/apps/geonix-logo.png'
 menu-button-terminal='ptyxis'
 menu-button-software-center='gnome-software'
 EOF
+    glib-compile-schemas /usr/share/glib-2.0/schemas/ 2>/dev/null || true
+    echo "GNOME branding applied"
+fi
 
-# 2. Compile the override into the system cache
-glib-compile-schemas /usr/share/glib-2.0/schemas/ 2>/dev/null || true
-
-# --- KDE Kickoff (Application Launcher) Modification ---
-# KDE stores default plasmoid settings in XML config files.
-# We use sed to rewrite the default icon string in the immutable tree.
-KICKOFF_XML="/usr/share/plasma6/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
-# Swap the default "start-here-kde" icon with our newly registered XDG asset
-sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
-echo "KDE Kickoff icon overridden (Plasma 6 path)."
+# --- KDE Kickoff icon override (Aurora only) ---
+if [[ "${BASE_VARIANT:-}" == "aurora" ]]; then
+    KICKOFF_XML="/usr/share/plasma6/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
+    if [[ -f "$KICKOFF_XML" ]]; then
+        sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
+        echo "KDE Kickoff icon overridden"
+    else
+        echo "WARNING: KDE Kickoff XML not found, skipping"
+    fi
+fi
 
 # --- GDM / FEDORA LOGO REPLACEMENTS ---
 PIXMAPS="/usr/share/pixmaps"

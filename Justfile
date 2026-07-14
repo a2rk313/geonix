@@ -41,11 +41,7 @@ fix:
 clean:
     #!/usr/bin/bash
     set -eoux pipefail
-    find _build* -exec rm -rf {} \;
-    rm -f previous.manifest.json
-    rm -f changelog.md
-    rm -f output.env
-    rm -f output/
+    rm -rf _build* previous.manifest.json changelog.md output.env output/
 
 [group('Utility')]
 [private]
@@ -569,9 +565,9 @@ install-postgis:
     just _ostree-install postgresql postgresql-server postgis
     just _mark-installed postgis
 
-    # Initialize PostGIS database — run this after rebooting post install-postgis
-    [group('GIS Workstation')]
-    setup-postgis-db:
+# Initialize PostGIS database — run this after rebooting post install-postgis
+[group('GIS Workstation')]
+setup-postgis-db:
     #!/usr/bin/bash
     set -euo pipefail
     if [ ! -f /var/lib/pgsql/data/PG_VERSION ]; then
@@ -585,13 +581,13 @@ install-postgis:
         read -rp "Username [default: gis]: " db_user
         db_user="${db_user:-gis}"
         read -rsp "Password (Will not be visible as you type) [default: gis]: " db_pass
-        echo ""  # newline after hidden password input — cursor stays on same line without this
+        echo ""
         db_pass="${db_pass:-gis}"
 
-        sudo -u postgres psql -c "CREATE USER ${db_user} WITH PASSWORD '${db_pass}' CREATEDB;" 2>/dev/null || true
-        sudo -u postgres psql -c "CREATE DATABASE ${db_name} OWNER ${db_user};" 2>/dev/null || true
-        sudo -u postgres psql -d "${db_name}" -c "CREATE EXTENSION IF NOT EXISTS postgis;" 2>/dev/null || true
-        sudo -u postgres psql -d "${db_name}" -c "CREATE EXTENSION IF NOT EXISTS postgis_topology;" 2>/dev/null || true
+        sudo -u postgres psql -c "CREATE USER \"$db_user\" WITH PASSWORD '$db_pass' CREATEDB;" 2>/dev/null || true
+        sudo -u postgres psql -c "CREATE DATABASE \"$db_name\" OWNER \"$db_user\";" 2>/dev/null || true
+        sudo -u postgres psql -d "$db_name" -c "CREATE EXTENSION IF NOT EXISTS postgis;" 2>/dev/null || true
+        sudo -u postgres psql -d "$db_name" -c "CREATE EXTENSION IF NOT EXISTS postgis_topology;" 2>/dev/null || true
         echo ""
         echo "PostGIS running."
         echo "  Connect: psql -U ${db_user} -d ${db_name}"
@@ -608,23 +604,23 @@ install-geoserver:
     echo "=== Installing GeoServer ${GEOSERVER_VERSION} (Quadlet) ==="
     mkdir -p "${HOME}/.config/containers/systemd"
     mkdir -p "${HOME}/geoserver-data"
-    cat > "${HOME}/.config/containers/systemd/geoserver.container" << EOF
-    [Unit]
-    Description=GeoServer OGC Map Server
-    After=network-online.target
-
-    [Container]
-    Image=docker.io/kartoza/geoserver:${GEOSERVER_VERSION}
-    PublishPort=8080:8080
-    Volume=%h/geoserver-data:/opt/geoserver/data_dir:Z
-    Environment=GEOSERVER_DATA_DIR=/opt/geoserver/data_dir
-
-    [Service]
-    Restart=on-failure
-
-    [Install]
-    WantedBy=default.target
-    EOF
+    printf '%s\n' \
+        "[Unit]" \
+        "Description=GeoServer OGC Map Server" \
+        "After=network-online.target" \
+        "" \
+        "[Container]" \
+        "Image=docker.io/kartoza/geoserver:${GEOSERVER_VERSION}" \
+        "PublishPort=8080:8080" \
+        "Volume=%h/geoserver-data:/opt/geoserver/data_dir:Z" \
+        "Environment=GEOSERVER_DATA_DIR=/opt/geoserver/data_dir" \
+        "" \
+        "[Service]" \
+        "Restart=on-failure" \
+        "" \
+        "[Install]" \
+        "WantedBy=default.target" \
+        > "${HOME}/.config/containers/systemd/geoserver.container"
     systemctl --user daemon-reload
     systemctl --user enable --now geoserver
     just _mark-installed geoserver
@@ -644,20 +640,20 @@ install-mapproxy:
     python3 -m venv "$VENV_DIR"
     "$VENV_DIR/bin/pip" install --upgrade pip mapproxy Pillow pyproj
     mkdir -p "${HOME}/.local/bin"
-    tee "${HOME}/.local/bin/mapproxy" > /dev/null << EOF
-    #!/bin/bash
-    source "${VENV_DIR}/bin/activate"
-    mapproxy-util "\$@"
-    EOF
-        chmod +x "${HOME}/.local/bin/mapproxy"
-        CONF_DIR="${HOME}/.config/mapproxy"
-        mkdir -p "$CONF_DIR"
-        [ -f "${CONF_DIR}/mapproxy.yaml" ] || \
-            "$VENV_DIR/bin/mapproxy-util" create -t base-config "$CONF_DIR/"
-        just _mark-installed mapproxy
-        echo "MapProxy installed."
-        echo "  Config: ${CONF_DIR}/mapproxy.yaml"
-        echo "  Start:  mapproxy serve-develop ${CONF_DIR}/mapproxy.yaml"
+    printf '%s\n' \
+        '#!/bin/bash' \
+        "source \"${VENV_DIR}/bin/activate\"" \
+        'mapproxy-util "$@"' \
+        > "${HOME}/.local/bin/mapproxy"
+    chmod +x "${HOME}/.local/bin/mapproxy"
+    CONF_DIR="${HOME}/.config/mapproxy"
+    mkdir -p "$CONF_DIR"
+    [ -f "${CONF_DIR}/mapproxy.yaml" ] || \
+        "$VENV_DIR/bin/mapproxy-util" create -t base-config "$CONF_DIR/"
+    just _mark-installed mapproxy
+    echo "MapProxy installed."
+    echo "  Config: ${CONF_DIR}/mapproxy.yaml"
+    echo "  Start:  mapproxy serve-develop ${CONF_DIR}/mapproxy.yaml"
 
 # ─── GIS Workstation: Python & Notebooks ───────────────────────────────────────
 
@@ -678,11 +674,11 @@ install-jupyter:
     "$VENV_DIR/bin/python" -m ipykernel install \
         --user --name gis-kernel --display-name "GIS Python"
     mkdir -p "${HOME}/.local/bin"
-    tee "${HOME}/.local/bin/gis-lab" > /dev/null << EOF
-    #!/bin/bash
-    source "${VENV_DIR}/bin/activate"
-    jupyter lab "\$@"
-    EOF
+    printf '%s\n' \
+        '#!/bin/bash' \
+        "source \"${VENV_DIR}/bin/activate\"" \
+        'jupyter lab "$@"' \
+        > "${HOME}/.local/bin/gis-lab"
     chmod +x "${HOME}/.local/bin/gis-lab"
     just _mark-installed jupyter
     echo "JupyterLab installed."
@@ -810,15 +806,15 @@ install-fieldwork:
         curl -L -o "${INSTALL_DIR}/QField.AppImage" \
             "https://github.com/opengisch/QField/releases/download/v${LATEST}/qfield-v${LATEST}-linux-x64.AppImage"
         chmod +x "${INSTALL_DIR}/QField.AppImage"
-        cat > "${APPS_DIR}/qfield.desktop" << EOF
-    [Desktop Entry]
-    Name=QField
-    Comment=Mobile GIS field data collection
-    Exec=${INSTALL_DIR}/QField.AppImage
-    Icon=qfield
-    Type=Application
-    Categories=Science;Geography;
-    EOF
+        printf '%s\n' \
+            "[Desktop Entry]" \
+            "Name=QField" \
+            "Comment=Mobile GIS field data collection" \
+            "Exec=${INSTALL_DIR}/QField.AppImage" \
+            "Icon=qfield" \
+            "Type=Application" \
+            "Categories=Science;Geography;" \
+            > "${APPS_DIR}/qfield.desktop"
         echo "  QField ${LATEST} installed."
         echo "  Launch: QField.AppImage or from app launcher"
     fi
@@ -950,4 +946,3 @@ update-all:
     echo "Recipe update complete."
     echo "  Host package updates (GRASS, OTB, PostGIS): rebase to latest geonix image."
     echo "  GeoAI Distrobox: distrobox enter geoai -- pip3 install --upgrade torchgeo"
-

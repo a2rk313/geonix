@@ -25,6 +25,12 @@ setfattr -n user.component -v "saga"     /usr/share/saga*                2>/dev/
 setfattr -n user.component -v "saga"     /usr/lib64/saga*                2>/dev/null || true
 setfattr -n user.component -v "saga"     /usr/bin/saga_cmd               2>/dev/null || true
 
+# GRASS GIS Python
+setfattr -n user.component -v "grass"    /usr/lib64/grass*/etc/python*   2>/dev/null || true
+
+# SAGA GIS Python
+setfattr -n user.component -v "saga"     /usr/lib64/saga/python*         2>/dev/null || true
+
 # PDAL
 setfattr -n user.component -v "pdal"     /usr/lib64/libpdal*             2>/dev/null || true
 setfattr -n user.component -v "pdal"     /usr/bin/pdal                   2>/dev/null || true
@@ -35,6 +41,12 @@ setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/rasteri
 setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/shapely*    2>/dev/null || true
 setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/geopandas*  2>/dev/null || true
 setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/pyproj*     2>/dev/null || true
+setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/xarray*     2>/dev/null || true
+setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/netCDF4*    2>/dev/null || true
+setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/h5py*       2>/dev/null || true
+setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/scipy*      2>/dev/null || true
+setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/sklearn*    2>/dev/null || true
+setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/sqlalchemy* 2>/dev/null || true
 
 # Branding — changes most frequently, isolated so updates don't touch GIS layers
 setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/watermark.png  2>/dev/null || true

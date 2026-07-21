@@ -562,9 +562,9 @@ install-legacy-env:
 
 # ─── GIS Workstation: System Tools ──────────────────────────────────────────────
 
-# Install virtualization stack (QEMU, libvirt, Cockpit) — QEMU is in the base image for ISO builds only
+# Install virtualization stack (QEMU, libvirt, Cockpit)
 [group('GIS Workstation')]
-install-vm:
+install-virtualization:
     #!/usr/bin/bash
     set -euo pipefail
     echo "=== Installing Virtualization Stack ==="
@@ -581,6 +581,82 @@ install-vm:
     echo "Virtualization stack installed."
     echo "  Cockpit:  https://localhost:9090"
     echo "  libvirt:  sudo virsh list --all"
+
+# Install GPU compute stacks (AMD ROCm + Intel compute runtime)
+[group('GIS Workstation')]
+install-gpu-compute:
+    #!/usr/bin/bash
+    set -euo pipefail
+    echo "=== Installing GPU Compute Stacks ==="
+    sudo rpm-ostree install --idempotent --apply-live \
+        rocm-hip rocm-opencl rocm-smi \
+        rocm-comgr rocm-llvm rocm-clang \
+        rocm-runtime rocminfo \
+        hip-rocclr hip-devel \
+        rocblas rocsparse rocrand rocprim miopen-hip miopen-opencl \
+        intel-compute-runtime intel-igc intel-opencl \
+        level-zero level-zero-gpu
+    echo ""
+    echo "GPU compute stacks installed."
+    echo "  AMD:   rocminfo | hipconfig"
+    echo "  Intel: clinfo | zeinfo"
+
+# Install printing stack (CUPS, HPLIP, SANE)
+[group('GIS Workstation')]
+install-printing:
+    #!/usr/bin/bash
+    set -euo pipefail
+    echo "=== Installing Printing Stack ==="
+    sudo rpm-ostree install --idempotent --apply-live \
+        cups cups-filters cups-pdf \
+        hplip hplip-common hplip-libs \
+        gutenprint gutenprint-libs gutenprint-libs-ui \
+        sane-backends sane-backends-drivers-scanners \
+        simple-scan
+    sudo systemctl enable --now cups
+    echo ""
+    echo "Printing stack installed."
+
+# Install Yubikey tools
+[group('GIS Workstation')]
+install-yubikey:
+    #!/usr/bin/bash
+    set -euo pipefail
+    echo "=== Installing Yubikey Tools ==="
+    sudo rpm-ostree install --idempotent --apply-live \
+        yubikey-manager yubikey-personalization \
+        libyubikey ykclient ykpers \
+        pam_yubico
+    echo ""
+    echo "Yubikey tools installed."
+
+# Install additional shells (zsh, fish, oh-my-zsh, starship)
+[group('GIS Workstation')]
+install-shells:
+    #!/usr/bin/bash
+    set -euo pipefail
+    echo "=== Installing Shells ==="
+    sudo rpm-ostree install --idempotent --apply-live \
+        zsh fish \
+        fzf zsh-autosuggestions zsh-syntax-highlighting
+    echo ""
+    echo "Shells installed.  Run: chsh -s /bin/zsh (or /bin/fish)"
+
+# Install non-essential fonts
+[group('GIS Workstation')]
+install-fonts:
+    #!/usr/bin/bash
+    set -euo pipefail
+    echo "=== Installing Fonts ==="
+    sudo rpm-ostree install --idempotent --apply-live \
+        google-noto-sans-fonts google-noto-serif-fonts \
+        google-noto-sans-mono-fonts google-noto-sans-cjk-fonts \
+        google-droid-sans-fonts google-droid-serif-fonts \
+        google-droid-sans-mono-fonts \
+        jetbrains-mono-fonts fira-code-fonts \
+        powerline-fonts
+    echo ""
+    echo "Fonts installed."
 
 # ─── GIS Workstation: Workflow Bundles ─────────────────────────────────────────
 

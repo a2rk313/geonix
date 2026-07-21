@@ -28,6 +28,7 @@ if [[ -d "$PLYMOUTH_THEME" ]]; then
     cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/watermark.png"
     cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
     cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-watermark.png"
+    cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-logo.png"
     cp /ctx/logo/logo_small_128.png "/usr/share/icons/hicolor/scalable/apps/geonix-logo.png"
     echo "Plymouth branding applied"
 else

@@ -49,7 +49,20 @@ setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/sklearn
 setfattr -n user.component -v "gis-py"   /usr/lib/python3*/site-packages/sqlalchemy* 2>/dev/null || true
 
 # Branding — changes most frequently, isolated so updates don't touch GIS layers
-setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/watermark.png  2>/dev/null || true
-setfattr -n user.component -v "branding" /usr/share/ublue-os/motd                          2>/dev/null || true
-setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora-gdm-logo.png            2>/dev/null || true
-setfattr -n user.component -v "branding" /usr/share/icons/hicolor/256x256/apps/geonix-logo.png 2>/dev/null || true
+# Plymouth theme assets
+setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/watermark.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/bgrt-fallback.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/silverblue-watermark.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/silverblue-logo.png 2>/dev/null || true
+
+# System icon
+setfattr -n user.component -v "branding" /usr/share/icons/hicolor/scalable/apps/geonix-logo.png 2>/dev/null || true
+
+# GDM / Pixmaps replacement assets
+setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora-gdm-logo.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora-logo-icon.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora-logo-small.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora-logo-sprite.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora_logo_med.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora_whitelogo_med.png 2>/dev/null || true

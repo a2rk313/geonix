@@ -38,5 +38,12 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=bind,source=logo,target=/ctx/logo \
     /ctx/image-info.sh && \
     /ctx/branding.sh
+    KERNEL_VERSION=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core) && \
+    DRACUT_NO_XATTR=1 dracut \
+      --no-hostonly \
+      --reproducible \
+      --zstd \
+      -f "/usr/lib/modules/${KERNEL_VERSION}/initramfs.img" \
+      "${KERNEL_VERSION}"
 
 RUN bootc container lint

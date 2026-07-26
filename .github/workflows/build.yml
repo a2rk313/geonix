@@ -182,7 +182,15 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io \
             -u ${{ github.actor }} --password-stdin
 
-          sudo podman pull "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
+          # Copy locally built image from user storage to rootful storage
+          # buildah-build stores in user (~/.local/share/containers/storage),
+          # chunking runs as root and needs it in /var/lib/containers/storage
+          sudo podman image scp \
+            "${UID}@localhost::localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+            "root@localhost::localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+
+          sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+            "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
 
           CHUNKED_REF="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-chunked"
 

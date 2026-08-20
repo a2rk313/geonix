@@ -210,7 +210,6 @@ jobs:
             sudo skopeo copy \
               --dest-creds="${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
               --dest-compress-format=zstd:chunked \
-              --dest-force-compress-format \
               --digestfile="/tmp/digest.txt" \
               "containers-storage:${CHUNKED_REF}" \
               "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}"

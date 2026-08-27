@@ -44,12 +44,10 @@ jobs:
           - disk-type: "qcow2"
             image_name: geonix-gnome
             iso_config: "./disk_config/disk.toml"
-          # Changed from anaconda-iso to the modern bootiso
-          - disk-type: "bootiso"
+          - disk-type: "iso"
             image_name: geonix-plasma
             iso_config: "./disk_config/iso-kde.toml"
-          # Changed from anaconda-iso to the modern bootiso
-          - disk-type: "bootiso"
+          - disk-type: "iso"
             image_name: geonix-gnome
             iso_config: "./disk_config/iso-gnome.toml"
     permissions:
@@ -102,7 +100,7 @@ jobs:
           types: ${{ matrix.disk-type }}
           additional-args: --use-librepo=True
           # Explicit RootFs bypasses the osbuild identity panic
-          rootfs: ${{ matrix.disk-type == 'bootiso' && 'ext4' || 'btrfs' }}
+          rootfs: ${{ matrix.disk-type == 'iso' && 'ext4' || 'btrfs' }}
 
       - name: Upload disk images and Checksum to Job Artifacts
         if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'

@@ -221,8 +221,8 @@ _run-vm $target_image $tag $type $config:
     set -eoux pipefail
 
     image_file="output/${type}/disk.${type}"
-    if [[ $type == anaconda-iso ]]; then
-        image_file="output/bootiso/install.iso"
+    if [[ $type == iso ]]; then
+        image_file="output/iso/install.iso"
     fi
 
     if [[ ! -f "${image_file}" ]]; then

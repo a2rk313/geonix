@@ -49,7 +49,10 @@ jobs:
             dosfstools \
             mtools \
             parted \
-            qemu-utils
+            qemu-utils \
+            systemd-ukify \
+            python3-pefile \
+            python3-virt-firmware
 
       - name: Build OS tree
         run: |

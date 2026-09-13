@@ -54,9 +54,9 @@ jobs:
       - name: Build OS tree
         run: |
           if [ "${{ matrix.variant }}" = "plasma" ]; then
-            mkosi build --include mkosi.conf.d/02-plasma.conf
+            sudo mkosi build --include mkosi.conf.d/02-plasma.conf
           else
-            mkosi build
+            sudo mkosi build
           fi
 
       - name: Commit to ostree

@@ -65,8 +65,8 @@ jobs:
       - name: Commit to ostree
         run: |
           sudo mkdir -p /tmp/ostree-repo
-          ostree --repo=/tmp/ostree-repo init --mode=archive-z2
-          ostree --repo=/tmp/ostree-repo commit \
+          sudo ostree --repo=/tmp/ostree-repo init --mode=archive-z2
+          sudo ostree --repo=/tmp/ostree-repo commit \
             --branch=geonix/26.04/${{ matrix.variant }} \
             --tree=dir=output/ \
             --add-metadata-string=version=$(date +%Y%m%d)

@@ -74,13 +74,6 @@ jobs:
             --tree=dir=output/ \
             --add-metadata-string=version=$(date +%Y%m%d)
 
-      - name: Upload OS tree artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.IMAGE_NAME }}-${{ matrix.variant }}-tree
-          path: output/
-          retention-days: 7
-
       - name: Upload ostree repo artifact
         uses: actions/upload-artifact@v4
         with:

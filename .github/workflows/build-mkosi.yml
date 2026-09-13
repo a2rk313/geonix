@@ -1,0 +1,83 @@
+---
+name: Build mkosi images
+
+on:
+  push:
+    branches:
+      - mkosi-experiment
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: geonix
+  DEFAULT_TAG: latest
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ matrix.variant }} image
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - gnome
+          - plasma
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@v9
+        with:
+          remove-codeql: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            mkosi \
+            ostree \
+            systemd-container \
+            dosfstools \
+            mtools \
+            parted \
+            qemu-utils
+
+      - name: Build OS tree
+        run: |
+          if [ "${{ matrix.variant }}" = "plasma" ]; then
+            mkosi build --include mkosi.conf.d/02-plasma.conf
+          else
+            mkosi build
+          fi
+
+      - name: Commit to ostree
+        run: |
+          mkdir -p /tmp/ostree-repo
+          ostree --repo=/tmp/ostree-repo init --mode=archive-z2
+          ostree --repo=/tmp/ostree-repo commit \
+            --branch=geonix/26.04/${{ matrix.variant }} \
+            --tree=dir=output/ \
+            --add-metadata-string=version=$(date +%Y%m%d)
+
+      - name: Upload OS tree artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.variant }}-tree
+          path: output/
+          retention-days: 7
+
+      - name: Upload ostree repo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.variant }}-ostree
+          path: /tmp/ostree-repo/
+          retention-days: 7

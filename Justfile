@@ -212,6 +212,54 @@ rebuild-iso-kde $target_image=("localhost/geonix-plasma") $tag=default_tag: && (
 [group('Build Virtual Machine Image')]
 rebuild-iso-gnome $target_image=("localhost/geonix-gnome") $tag=default_tag: && (_rebuild-bib target_image tag "anaconda-iso" "disk_config/iso-gnome.toml")
 
+# ─── Build with mkosi ──────────────────────────────────────────────────────────
+
+# Build OS tree with mkosi
+[group('Build Image')]
+build-mkosi variant="gnome":
+    #!/usr/bin/bash
+    set -euo pipefail
+    if [ "{{ variant }}" = "plasma" ]; then
+        mkosi build --include mkosi.conf.d/02-plasma.conf
+    else
+        mkosi build
+    fi
+
+# Build ISO with mkosi
+[group('Build Image')]
+build-mkosi-iso variant="gnome":
+    #!/usr/bin/bash
+    set -euo pipefail
+    if [ "{{ variant }}" = "plasma" ]; then
+        mkosi build --format=iso --include mkosi.conf.d/02-plasma.conf
+    else
+        mkosi build --format=iso
+    fi
+
+# Build QCOW2 with mkosi
+[group('Build Image')]
+build-mkosi-qcow2 variant="gnome":
+    #!/usr/bin/bash
+    set -euo pipefail
+    if [ "{{ variant }}" = "plasma" ]; then
+        mkosi build --format=disk --include mkosi.conf.d/02-plasma.conf
+    else
+        mkosi build --format=disk
+    fi
+    qemu-img convert -f raw -O qcow2 \
+        output/*.raw \
+        output/geonix-{{ variant }}.qcow2
+
+# Commit OS tree to local ostree repo
+[group('Build Image')]
+commit-ostree variant="gnome":
+    #!/usr/bin/bash
+    set -euo pipefail
+    ostree commit \
+        --branch=geonix/26.04/{{ variant }} \
+        --tree=dir=output/ \
+        --add-metadata-string=version=$(date +%Y%m%d)
+
 # ─── Run Virtual Machine ───────────────────────────────────────────────────────
 
 # Internal: run a VM from a disk image using qemux/qemu container

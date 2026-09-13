@@ -1,0 +1,12 @@
+#!/bin/sh
+echo ""
+echo "  Welcome to Geonix"
+echo "  GIS and Remote Sensing out of the box"
+echo ""
+echo "  Commands:"
+echo "    gj --list          Show available commands"
+echo "    gj status          Show installed recipes"
+echo "    gj update          Update system (ostree)"
+echo ""
+echo "  Docs: https://github.com/a2rk313/geonix"
+echo ""

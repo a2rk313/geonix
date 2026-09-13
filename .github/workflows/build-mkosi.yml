@@ -62,6 +62,9 @@ jobs:
             sudo mkosi build
           fi
 
+      - name: Fix output permissions
+        run: sudo chown -R $USER:$USER output/
+
       - name: Commit to ostree
         run: |
           sudo mkdir -p /tmp/ostree-repo

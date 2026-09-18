@@ -28,7 +28,7 @@ jobs:
 
     permissions:
       contents: read
-      packages: read
+      packages: write
 
     steps:
       - name: Checkout
@@ -52,14 +52,16 @@ jobs:
             qemu-utils \
             systemd-ukify \
             python3-pefile \
-            python3-virt-firmware
+            python3-virt-firmware \
+            podman \
+            skopeo
 
       - name: Build OS tree
         run: |
           if [ "${{ matrix.variant }}" = "plasma" ]; then
-            sudo mkosi build --include mkosi.conf.d/02-plasma.conf
+            sudo mkosi build --format=directory --include mkosi.conf.d/02-plasma.conf
           else
-            sudo mkosi build
+            sudo mkosi build --format=directory
           fi
 
       - name: Fix output permissions
@@ -74,9 +76,58 @@ jobs:
             --tree=dir=output/ \
             --add-metadata-string=version=$(date +%Y%m%d)
 
+      - name: Build ISO
+        run: |
+          sudo mkosi clean
+          if [ "${{ matrix.variant }}" = "plasma" ]; then
+            sudo mkosi build --format=iso --bootable=yes --include mkosi.conf.d/02-plasma.conf
+          else
+            sudo mkosi build --format=iso --bootable=yes
+          fi
+
+      - name: Fix output permissions after ISO
+        run: sudo chown -R $USER:$USER output/
+
+      - name: Build QCOW2
+        run: |
+          sudo mkosi clean
+          if [ "${{ matrix.variant }}" = "plasma" ]; then
+            sudo mkosi build --format=disk --bootable=yes --include mkosi.conf.d/02-plasma.conf
+          else
+            sudo mkosi build --format=disk --bootable=yes
+          fi
+          sudo qemu-img convert -f raw -O qcow2 \
+            output/*.raw \
+            output/geonix-${{ matrix.variant }}.qcow2
+
+      - name: Fix output permissions after QCOW2
+        run: sudo chown -R $USER:$USER output/
+
       - name: Upload ostree repo artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.IMAGE_NAME }}-${{ matrix.variant }}-ostree
           path: /tmp/ostree-repo/
           retention-days: 7
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.variant }}-iso
+          path: output/*.iso
+          retention-days: 7
+
+      - name: Upload QCOW2 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.variant }}-qcow2
+          path: output/*.qcow2
+          retention-days: 7
+
+      - name: Push ostree to ghcr.io
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io -u ${{ github.actor }} --password-stdin
+          sudo ostree container encapsulate \
+            --repo=/tmp/ostree-repo \
+            geonix/26.04/${{ matrix.variant }} \
+            docker://ghcr.io/${{ github.repository_owner }}/geonix:${{ matrix.variant }}

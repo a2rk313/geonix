@@ -231,9 +231,9 @@ build-mkosi-iso variant="gnome":
     #!/usr/bin/bash
     set -euo pipefail
     if [ "{{ variant }}" = "plasma" ]; then
-        mkosi build --format=iso --include mkosi.conf.d/02-plasma.conf
+        mkosi build --format=iso --bootable=yes --include mkosi.conf.d/02-plasma.conf
     else
-        mkosi build --format=iso
+        mkosi build --format=iso --bootable=yes
     fi
 
 # Build QCOW2 with mkosi
@@ -242,9 +242,9 @@ build-mkosi-qcow2 variant="gnome":
     #!/usr/bin/bash
     set -euo pipefail
     if [ "{{ variant }}" = "plasma" ]; then
-        mkosi build --format=disk --include mkosi.conf.d/02-plasma.conf
+        mkosi build --format=disk --bootable=yes --include mkosi.conf.d/02-plasma.conf
     else
-        mkosi build --format=disk
+        mkosi build --format=disk --bootable=yes
     fi
     qemu-img convert -f raw -O qcow2 \
         output/*.raw \

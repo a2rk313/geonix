@@ -29,7 +29,6 @@ if [[ -d "$PLYMOUTH_THEME" ]]; then
     cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
     cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-watermark.png"
     cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-logo.png"
-    cp /ctx/logo/logo_small_128.png "/usr/share/icons/hicolor/scalable/apps/geonix-logo.png"
     echo "Plymouth branding applied"
 else
     echo "WARNING: Plymouth spinner theme not found, skipping"
@@ -45,7 +44,10 @@ custom-icon-path='/usr/share/icons/hicolor/256x256/apps/geonix-logo.png'
 menu-button-terminal='ptyxis'
 menu-button-software-center='gnome-software'
 EOF
-    glib-compile-schemas /usr/share/glib-2.0/schemas/ 2>/dev/null || true
+    if ! glib-compile-schemas /usr/share/glib-2.0/schemas/; then
+        echo "ERROR: glib schema compilation failed" >&2
+        exit 1
+    fi
     echo "GNOME branding applied"
 fi
 
@@ -64,6 +66,10 @@ fi
 PIXMAPS="/usr/share/pixmaps"
 LOGO_128="/ctx/logo/logo_small_128.png"
 LOGO_256="/ctx/logo/logo_small_256.png"
+
+# Path must match gschema override above and KDE kickoff icon lookup
+mkdir -p /usr/share/icons/hicolor/256x256/apps
+cp "$LOGO_256" /usr/share/icons/hicolor/256x256/apps/geonix-logo.png
 
 cp "$LOGO_128" "${PIXMAPS}/fedora-gdm-logo.png"
 cp "$LOGO_128" "${PIXMAPS}/fedora-logo.png"

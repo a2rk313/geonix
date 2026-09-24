@@ -8,34 +8,35 @@ set -euxo pipefail
 
 dnf5 -y copr enable megger/saga
 
-# this installs a package from fedora repos
+# GIS stack from Fedora repos (+ SAGA from megger/saga COPR enabled above)
 dnf5 install -y \
-    gdal \
-    proj proj-data \
-    geos libgeotiff \
-    qgis python3-qgis \
-    qgis-grass grass \
-    python3-shapely \
-    python3-fiona \
-    python3-pyproj \
-    python3-rasterio \
-    python3-geopandas \
-    python3-xarray \
-    python3-netcdf4 \
-    python3-matplotlib \
-    python3-scipy \
-    pdal \
-    liblas \
-    python3-h5py \
-    gpsd gpsbabel \
-    saga \
-    python3-scikit-learn \
-    python3-numpy \
-    python3-pandas \
-    python3-sqlalchemy \
-    libspatialite spatialite-tools \
-    spatialindex \
-    && dnf5 clean all
+  gdal \
+  proj proj-data \
+  geos libgeotiff \
+  qgis python3-qgis \
+  qgis-grass grass \
+  python3-shapely \
+  python3-fiona \
+  python3-pyproj \
+  python3-rasterio \
+  python3-geopandas \
+  python3-xarray \
+  python3-netcdf4 \
+  python3-matplotlib \
+  python3-scipy \
+  pdal \
+  liblas \
+  python3-h5py \
+  gpsd gpsbabel \
+  saga \
+  python3-scikit-learn \
+  python3-numpy \
+  python3-pandas \
+  python3-sqlalchemy \
+  libspatialite spatialite-tools \
+  spatialindex \
+  python3-wxpython &&
+  dnf5 clean all
 
 # Use a COPR Example:
 #

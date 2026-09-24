@@ -59,11 +59,12 @@ install-otb:
     # Find the latest OTB COPR from orfeotoolbox dynamically
     COPR_NAME=$(curl -s "https://copr.fedorainfracloud.org/api_3/project/search?query=otb&owner=orfeotoolbox" \
         | python3 -c "
-    import sys, json
+    import sys, json, subprocess
     data = json.load(sys.stdin)
     projects = [p['name'] for p in data.get('items', []) if p['name'].startswith('otb')]
-    projects.sort(reverse=True)
-    print(projects[0] if projects else 'otb')
+    out = subprocess.run(['sort', '-Vr'], input='\n'.join(projects),
+                         text=True, capture_output=True).stdout.splitlines()
+    print(out[0] if out else 'otb')
     ")
     echo "Using COPR: orfeotoolbox/${COPR_NAME}"
     REPO_URL="https://copr.fedorainfracloud.org/coprs/orfeotoolbox/${COPR_NAME}/repo/fedora-${FEDORA_VER}/orfeotoolbox-${COPR_NAME}-fedora-${FEDORA_VER}.repo"
@@ -95,22 +96,24 @@ install-whitebox:
     echo "Use case: DEM analysis, hydrology, terrain derivatives"
     INSTALL_DIR="${HOME}/.local/bin"
     mkdir -p "$INSTALL_DIR"
-    LATEST=$(curl -s https://api.github.com/repos/jblindsay/whitebox-tools/releases/latest \
-        | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    echo "Version: ${LATEST}"
+    # Pinned on purpose — bump WBT_VERSION + WBT_SHA256 together after verifying upstream
+    WBT_VERSION="2.4.0"
+    WBT_SHA256="0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+    echo "Version: ${WBT_VERSION}"
     cd /tmp
     curl -L -o whitebox_tools.tar.gz \
-        "https://github.com/jblindsay/whitebox-tools/releases/download/${LATEST}/WhiteboxTools_linux_musl.tar.gz"
+        "https://github.com/jblindsay/whitebox-tools/releases/download/${WBT_VERSION}/WhiteboxTools_linux_musl.tar.gz"
+    echo "${WBT_SHA256}  whitebox_tools.tar.gz" | sha256sum -c -
     tar -xzf whitebox_tools.tar.gz
     mv WhiteboxTools_linux_musl/whitebox_tools "${INSTALL_DIR}/"
     chmod +x "${INSTALL_DIR}/whitebox_tools"
     rm -rf whitebox_tools.tar.gz WhiteboxTools_linux_musl/
     just _mark-installed whitebox
     echo ""
-    echo "WhiteboxTools ${LATEST} installed to ${INSTALL_DIR}"
+    echo "WhiteboxTools ${WBT_VERSION} installed to ${INSTALL_DIR}"
     echo "  Test: whitebox_tools --toolbox 'Terrain Analysis'"
 
-# Update WhiteboxTools to latest release
+# Update WhiteboxTools — prints newer upstream releases; bump the pin in install-whitebox
 [group('GIS Workstation')]
 update-whitebox:
     #!/usr/bin/bash
@@ -118,7 +121,11 @@ update-whitebox:
     LATEST=$(curl -s https://api.github.com/repos/jblindsay/whitebox-tools/releases/latest \
         | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
     echo "Installed: ${CURRENT:-unknown}   Latest: ${LATEST}"
-    [[ "$CURRENT" == "$LATEST" ]] && echo "Already up to date." || just install-whitebox
+    if [[ "$CURRENT" == "$LATEST" ]]; then
+        echo "Already up to date."
+    else
+        echo "Newer release available — bump WBT_VERSION and WBT_SHA256 in 'gj install-whitebox', then re-run it."
+    fi
 
 # Update QField AppImage to latest release
 [group('GIS Workstation')]
@@ -267,12 +274,21 @@ setup-postgis-db:
         db_name="${db_name:-gis}"
         read -rp "Username [default: gis]: " db_user
         db_user="${db_user:-gis}"
-        read -rsp "Password (Will not be visible as you type) [default: gis]: " db_pass
+        read -rsp "Password (no echo, empty = no password): " db_pass
         echo ""
-        db_pass="${db_pass:-gis}"
-
-        sudo -u postgres psql -c "CREATE USER \"$db_user\" WITH PASSWORD '$db_pass' CREATEDB;" 2>/dev/null || true
-        sudo -u postgres psql -c "CREATE DATABASE \"$db_name\" OWNER \"$db_user\";" 2>/dev/null || true
+        if [[ ! "$db_name" =~ ^[a-zA-Z0-9_]+$ || ! "$db_user" =~ ^[a-zA-Z0-9_]+$ ]]; then
+            echo "Names must match [a-zA-Z0-9_] only." >&2
+            exit 1
+        fi
+        if [[ -n "$db_pass" ]]; then
+            sudo -u postgres psql -v db_user="$db_user" -v db_pass="$db_pass" \
+                -c "CREATE USER :\"db_user\" WITH PASSWORD :'db_pass' CREATEDB;" 2>/dev/null || true
+        else
+            sudo -u postgres psql -v db_user="$db_user" \
+                -c 'CREATE USER :"db_user" CREATEDB;' 2>/dev/null || true
+        fi
+        sudo -u postgres psql -v db_user="$db_user" -v db_name="$db_name" \
+            -c 'CREATE DATABASE :"db_name" OWNER :"db_user";' 2>/dev/null || true
         sudo -u postgres psql -d "$db_name" -c "CREATE EXTENSION IF NOT EXISTS postgis;" 2>/dev/null || true
         sudo -u postgres psql -d "$db_name" -c "CREATE EXTENSION IF NOT EXISTS postgis_topology;" 2>/dev/null || true
         echo ""
@@ -286,7 +302,8 @@ setup-postgis-db:
 install-geoserver:
     #!/usr/bin/bash
     set -euo pipefail
-    GEOSERVER_VERSION=$(curl -s "https://api.github.com/repos/geoserver/geoserver/releases/latest" \
+    # Tag must come from the repo that publishes the image we pull (kartoza/geoserver)
+    GEOSERVER_VERSION=$(curl -s "https://api.github.com/repos/kartoza/docker-geoserver/releases/latest" \
         | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
     echo "=== Installing GeoServer ${GEOSERVER_VERSION} (Quadlet) ==="
     mkdir -p "${HOME}/.config/containers/systemd"
@@ -465,11 +482,11 @@ install-gpu-ml:
     if hasattr(torch, 'xpu'):
         print(f'XPU available: {torch.xpu.is_available()}')
     "
-        just _mark-installed gpu-ml
-        echo ""
-        echo "GeoAI stack installed."
-        echo "  Activate: geoai  (alias in ~/.bashrc)"
-        echo "  Restart shell or: source ~/.bashrc"
+    just _mark-installed gpu-ml
+    echo ""
+    echo "GeoAI stack installed."
+    echo "  Activate: geoai  (alias in ~/.bashrc)"
+    echo "  Restart shell or: source ~/.bashrc"
 
 # ─── GIS Workstation: Field Tools ──────────────────────────────────────────────
 
@@ -630,14 +647,14 @@ install-yubikey:
     echo ""
     echo "Yubikey tools installed."
 
-# Install additional shells (zsh, fish, oh-my-zsh, starship)
+# Install additional shells (zsh, fish, fzf, starship, oh-my-zsh)
 [group('GIS Workstation')]
 install-shells:
     #!/usr/bin/bash
     set -euo pipefail
     echo "=== Installing Shells ==="
     sudo rpm-ostree install --idempotent --apply-live \
-        zsh fish \
+        zsh fish starship oh-my-zsh \
         fzf zsh-autosuggestions zsh-syntax-highlighting
     echo ""
     echo "Shells installed.  Run: chsh -s /bin/zsh (or /bin/fish)"
@@ -651,6 +668,7 @@ install-fonts:
     sudo rpm-ostree install --idempotent --apply-live \
         google-noto-sans-fonts google-noto-serif-fonts \
         google-noto-sans-mono-fonts google-noto-sans-cjk-fonts \
+        google-noto-sans-italic-fonts google-noto-serif-italic-fonts \
         google-droid-sans-fonts google-droid-serif-fonts \
         google-droid-sans-mono-fonts \
         jetbrains-mono-fonts fira-code-fonts \
@@ -660,13 +678,13 @@ install-fonts:
 
 # ─── GIS Workstation: Workflow Bundles ─────────────────────────────────────────
 
-# Cartographer: GRASS + Jupyter (SAGA is in the base image)
+# Cartographer: Jupyter (GRASS + SAGA are in the base image)
 [group('GIS Workstation')]
 install-bundle-carto:
     just install-jupyter
     @echo "Cartographer bundle complete."
 
-# Remote Sensing: OTB + GRASS + PROJ grids + Jupyter
+# Remote Sensing: OTB + PROJ grids + Jupyter (GRASS is in the base image)
 [group('GIS Workstation')]
 install-bundle-rs:
     just install-otb
@@ -730,4 +748,3 @@ update-all:
     echo ""
     echo "Recipe update complete."
     echo "  Host package updates (GRASS, OTB, PostGIS): rebase to latest geonix image."
-    echo "  GeoAI Distrobox: distrobox enter geoai -- pip3 install --upgrade torchgeo"

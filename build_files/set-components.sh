@@ -56,7 +56,7 @@ setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/silv
 setfattr -n user.component -v "branding" /usr/share/plymouth/themes/spinner/silverblue-logo.png 2>/dev/null || true
 
 # System icon
-setfattr -n user.component -v "branding" /usr/share/icons/hicolor/scalable/apps/geonix-logo.png 2>/dev/null || true
+setfattr -n user.component -v "branding" /usr/share/icons/hicolor/256x256/apps/geonix-logo.png 2>/dev/null || true
 
 # GDM / Pixmaps replacement assets
 setfattr -n user.component -v "branding" /usr/share/pixmaps/fedora-gdm-logo.png 2>/dev/null || true

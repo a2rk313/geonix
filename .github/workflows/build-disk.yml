@@ -18,13 +18,10 @@ on:
     branches:
       - main
     paths:
-      - "./disk_config/disk.toml"
-      - "./disk_config/iso-gnome.toml"
-      - "./disk_config/iso-kde.toml"
-      - "./.github/workflows/build-disk.yml"
+      - "disk_config/**"
+      - ".github/workflows/build-disk.yml"
 
 env:
-  IMAGE_NAME: ${{ github.event.repository.name }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
   BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest"
@@ -60,10 +57,7 @@ jobs:
         run: |
           USER_UID=$(id -u)
           USER_GID=$(id -g)
-          DISK_TYPE=$(echo "${{ matrix.disk-type }}" | tr ' ' '-')
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
-          echo "DISK_TYPE=${DISK_TYPE}" >> ${GITHUB_ENV}
           echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
           echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
 
@@ -111,7 +105,7 @@ jobs:
           # -----------------------------------
           path: ${{ steps.build.outputs.output-directory }}
           if-no-files-found: error
-          retention-days: 0
+          retention-days: 14
           compression-level: 0
           overwrite: true
 

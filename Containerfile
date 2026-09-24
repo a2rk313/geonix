@@ -18,7 +18,8 @@ ENV IMAGE_NAME=${IMAGE_NAME}
 ENV IMAGE_REGISTRY=${IMAGE_REGISTRY}
 ENV DEFAULT_TAG=${DEFAULT_TAG}
 
-RUN rm /opt && mkdir /opt
+# Drop base-image /opt contents so Geonix fully owns this directory
+RUN rm -rf /opt && mkdir /opt
 
 # GIS stack + kernel optimizations + just recipes
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
@@ -26,9 +27,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build.sh
-
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/set-components.sh
 
 # Strip redundant packages from base image
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
@@ -38,12 +36,16 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=bind,source=logo,target=/ctx/logo \
     /ctx/image-info.sh && \
     /ctx/branding.sh \
-    KERNEL_VERSION=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core) && \
+    KERNEL_VERSION=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | head -n1) && \
     DRACUT_NO_XATTR=1 dracut \
       --no-hostonly \
       --reproducible \
       --zstd \
       -f "/usr/lib/modules/${KERNEL_VERSION}/initramfs.img" \
       "${KERNEL_VERSION}"
+
+# xattrs AFTER branding so component labels actually stick (otherwise branding setfattr no-ops)
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    /ctx/set-components.sh
 
 RUN bootc container lint

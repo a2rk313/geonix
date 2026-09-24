@@ -119,7 +119,6 @@ REMOVE=(
     google-noto-sans-cjk-fonts
     google-noto-sans-italic-fonts
     google-noto-serif-italic-fonts
-    google-noto-sans-mono-fonts
     google-droid-sans-fonts
     google-droid-serif-fonts
     google-droid-sans-mono-fonts

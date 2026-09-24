@@ -15,7 +15,7 @@ dnf5 install -y \
   geos libgeotiff \
   qgis python3-qgis \
   qgis-grass grass \
-  python3-shapely \
+  grass-gui python3-shapely \
   python3-fiona \
   python3-pyproj \
   python3-rasterio \

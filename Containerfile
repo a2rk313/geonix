@@ -35,14 +35,16 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=bind,source=logo,target=/ctx/logo \
     /ctx/image-info.sh && \
-    /ctx/branding.sh \
+    /ctx/branding.sh && \
     KERNEL_VERSION=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | head -n1) && \
+    echo "Regenerating initramfs for ${KERNEL_VERSION}" && \
     DRACUT_NO_XATTR=1 dracut \
       --no-hostonly \
       --reproducible \
       --zstd \
       -f "/usr/lib/modules/${KERNEL_VERSION}/initramfs.img" \
-      "${KERNEL_VERSION}"
+      "${KERNEL_VERSION}" && \
+    test -s "/usr/lib/modules/${KERNEL_VERSION}/initramfs.img"
 
 # xattrs AFTER branding so component labels actually stick (otherwise branding setfattr no-ops)
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \

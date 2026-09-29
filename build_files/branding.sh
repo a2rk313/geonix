@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 # --- 4. MOTD TEMPLATE ---
-cat >/usr/share/ublue-os/motd/template.md <<'EOF'
+cat >/etc/motd <<'EOF'
 # 🌍 Welcome to Geonix
 **GIS and Remote Sensing out of the box.**
 

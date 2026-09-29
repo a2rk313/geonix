@@ -4,12 +4,26 @@ set -euxo pipefail
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
 
+dnf5 install -y \
+  "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
+  "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+
+# copr.vendor.conf pins the COPR plugin to `distribution = fedora` so
+# `dnf5 copr enable` works under our custom ID=geonix os-release (bluefin PR #17).
+# MUST run before any `dnf5 copr enable`.
+install -Dm644 /ctx/copr.vendor.conf /usr/share/dnf/plugins/copr.vendor.conf
+
+dnf5 -y copr enable ublue-os/packages
 dnf5 -y copr enable megger/saga
 
 # GIS stack from Fedora repos (+ SAGA from megger/saga COPR enabled above)
 dnf5 install -y \
+  uupd \
+  ublue-os-update-services \
+  ublue-os-signing \
+  ublue-os-just \
+  just jq \
   gdal \
   proj proj-data \
   geos libgeotiff \
@@ -44,6 +58,9 @@ dnf5 install -y \
 # dnf5 -y install package
 # Disable COPRs so they don't end up enabled on the final image:
 # dnf5 -y copr disable ublue-os/staging
+
+if [[ ! -e /usr/bin/ujust ]]; then ln -sf /usr/bin/just /usr/bin/ujust; fi
+dnf5 -y copr disable ublue-os/packages
 
 dnf5 -y copr disable megger/saga
 

@@ -1,10 +1,8 @@
 #!/usr/bin/bash
 # --- 4. MOTD TEMPLATE ---
-cat > /usr/share/ublue-os/motd/template.md << 'EOF'
+cat >/usr/share/ublue-os/motd/template.md <<'EOF'
 # 🌍 Welcome to Geonix
 **GIS and Remote Sensing out of the box.**
-
-🚀 `${MOTD_IMAGE_NAME}:${MOTD_IMAGE_TAG}`
 
 | Command | Description |
 |---------|-------------|
@@ -15,8 +13,6 @@ cat > /usr/share/ublue-os/motd/template.md << 'EOF'
 | `gj install-qgis-plugins` | Install QGIS plugins |
 | `qgis` | Launch QGIS Desktop |
 
-${MOTD_TIP}
-
 - [Geonix Repository](https://github.com/a2rk313/geonix)
 - [Report an Issue](https://github.com/a2rk313/geonix/issues)
 EOF
@@ -25,18 +21,18 @@ echo "MOTD template written"
 # --- 5. PLYMOUTH ---
 PLYMOUTH_THEME="/usr/share/plymouth/themes/spinner"
 if [[ -d "$PLYMOUTH_THEME" ]]; then
-    cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/watermark.png"
-    cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
-    cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-watermark.png"
-    cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-logo.png"
-    echo "Plymouth branding applied"
+  cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/watermark.png"
+  cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/bgrt-fallback.png"
+  cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-watermark.png"
+  cp /ctx/logo/logo_small_128.png "${PLYMOUTH_THEME}/silverblue-logo.png"
+  echo "Plymouth branding applied"
 else
-    echo "WARNING: Plymouth spinner theme not found, skipping"
+  echo "WARNING: Plymouth spinner theme not found, skipping"
 fi
 
-# --- GNOME Logomenu extension override (Bluefin only) ---
-if [[ "${BASE_VARIANT:-}" == "bluefin" ]]; then
-    cat > /usr/share/glib-2.0/schemas/99-geonix-branding.gschema.override << 'EOF'
+# --- GNOME Logomenu extension override (only when the extension is present) ---
+if compgen -G "/usr/share/gnome-shell/extensions/*logo*menu*" >/dev/null 2>&1; then
+  cat >/usr/share/glib-2.0/schemas/99-geonix-branding.gschema.override <<'EOF'
 [org.gnome.shell.extensions.logo-menu]
 use-custom-icon=true
 menu-button-icon-image=2
@@ -44,22 +40,22 @@ custom-icon-path='/usr/share/icons/hicolor/256x256/apps/geonix-logo.png'
 menu-button-terminal='ptyxis'
 menu-button-software-center='gnome-software'
 EOF
-    if ! glib-compile-schemas /usr/share/glib-2.0/schemas/; then
-        echo "ERROR: glib schema compilation failed" >&2
-        exit 1
-    fi
-    echo "GNOME branding applied"
+  if ! glib-compile-schemas /usr/share/glib-2.0/schemas/; then
+    echo "ERROR: glib schema compilation failed" >&2
+    exit 1
+  fi
+  echo "GNOME branding applied"
+else
+  echo "Logomenu extension not present — skipping GNOME logo-menu override"
 fi
 
-# --- KDE Kickoff icon override (Aurora only) ---
-if [[ "${BASE_VARIANT:-}" == "aurora" ]]; then
-    KICKOFF_XML="/usr/share/plasma6/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
-    if [[ -f "$KICKOFF_XML" ]]; then
-        sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
-        echo "KDE Kickoff icon overridden"
-    else
-        echo "WARNING: KDE Kickoff XML not found, skipping"
-    fi
+# --- KDE Kickoff icon override (when Plasma's kickoff config is present) ---
+KICKOFF_XML="/usr/share/plasma6/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml"
+if [[ -f "$KICKOFF_XML" ]]; then
+  sed -i 's|<default>start-here-kde</default>|<default>geonix-logo</default>|g' "$KICKOFF_XML"
+  echo "KDE Kickoff icon overridden"
+else
+  echo "WARNING: KDE Kickoff XML not found, skipping"
 fi
 
 # --- GDM / FEDORA LOGO REPLACEMENTS ---

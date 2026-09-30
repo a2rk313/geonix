@@ -48,7 +48,15 @@ if [[ -f "$INFO_FILE" ]]; then
     "$INFO_FILE" >/tmp/image-info.json &&
     mv /tmp/image-info.json "$INFO_FILE"
 else
-  echo "WARNING: $INFO_FILE not found. Skipping JSON mutation."
+  echo "No upstream image-info.json (stock base) — writing a fresh one..."
+  mkdir -p /usr/share/ublue-os
+  jq -n \
+    --arg name "${IMAGE_NAME:-geonix}" \
+    --arg vendor "$IMAGE_VENDOR" \
+    --arg tag "${DEFAULT_TAG:-latest}" \
+    --arg ref "ostree-image-signed:docker://${IMAGE_REGISTRY:-ghcr.io/a2rk313}/${IMAGE_NAME:-geonix}" \
+    '{ "image-name": $name, "image-vendor": $vendor, "image-tag": $tag, "image-ref": $ref }' \
+    >"$INFO_FILE"
 fi
 
 # --- 4. GJ SYMLINK ---

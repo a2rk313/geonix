@@ -72,7 +72,7 @@ sudoif command *args:
 # Usage: just build [target_image] [tag] [base_image]
 
 [group('Build Image')]
-build $target_image=image_name $tag=default_tag $base_image="quay.io/fedora-ostree-desktops/silverblue:latest":
+build $target_image=image_name $tag=default_tag $base_image="quay.io/fedora-ostree-desktops/silverblue:44":
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -90,13 +90,13 @@ build $target_image=image_name $tag=default_tag $base_image="quay.io/fedora-ostr
 # Usage: just build-kinoite [tag]
 [group('Build Image')]
 build-kinoite $tag=default_tag:
-    just build geonix-plasma $tag quay.io/fedora-ostree-desktops/kinoite:latest
+    just build geonix-plasma $tag quay.io/fedora-ostree-desktops/kinoite:44
 
 # Build the Silverblue (GNOME) variant
 # Usage: just build-silverblue [tag]
 [group('Build Image')]
 build-silverblue $tag=default_tag:
-    just build geonix-gnome $tag quay.io/fedora-ostree-desktops/silverblue:latest
+    just build geonix-gnome $tag quay.io/fedora-ostree-desktops/silverblue:44
 
 # Build both Kinoite and Silverblue variants sequentially
 [group('Build Image')]

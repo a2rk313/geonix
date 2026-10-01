@@ -45,6 +45,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       changed: ${{ steps.check.outputs.changed }}
+      base_version: ${{ steps.check.outputs.base_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
@@ -57,34 +58,69 @@ jobs:
           restore-keys: |
             upstream-digests-${{ runner.os }}-
 
-      - name: Check upstream image digests
+      - name: Discover base version + check upstream digests
         id: check
         run: |
+          set -euo pipefail
+          API="https://quay.io/api/v1/repository/fedora-ostree-desktops"
+
+          curl -fsSL "$API/silverblue/tag/?onlyActiveTags=true&limit=100" -o /tmp/tags-sb.json
+          curl -fsSL "$API/kinoite/tag/?onlyActiveTags=true&limit=100" -o /tmp/tags-kt.json
+          # Exact-version membership = GA status (branched releases appear only as "N Beta").
+          curl -fsSL "https://getfedora.org/releases.json" -o /tmp/fedora-releases.json
+
+          # Rawhide is aliased as the highest integer tag on both repos — exclude it by digest.
+          RAWHIDE=$(jq -r '[.tags[] | select(.name == "rawhide") | .manifest_digest][0] // empty' /tmp/tags-sb.json)
+          [[ -n "$RAWHIDE" ]] || { echo "::error::rawhide tag missing from quay tag list"; exit 1; }
+
+          CANDIDATES=$(jq -r --arg rw "$RAWHIDE" '
+            [.tags[] | select(.is_manifest_list and (.name | test("^[0-9]+$")) and .manifest_digest != $rw)
+             | .name] | sort_by(tonumber) | reverse | .[]' /tmp/tags-sb.json)
+          [[ -n "$CANDIDATES" ]] || { echo "::error::no numeric base tags on quay"; exit 1; }
+
+          BASE_VERSION=""
+          while read -r v; do
+            if jq -e --arg v "$v" '[.[] | select(.version == $v)] | length > 0' /tmp/fedora-releases.json >/dev/null; then
+              BASE_VERSION="$v"
+              echo "Fedora $v is GA — selecting."
+              break
+            fi
+            echo "Fedora $v is not GA yet (Branched/Beta) — stepping down."
+          done <<< "$CANDIDATES"
+          [[ -n "$BASE_VERSION" ]] || { echo "::error::no GA-eligible Fedora base"; exit 1; }
+          echo "Tracking fedora-ostree-desktops base ${BASE_VERSION}"
+
+          SILVERBLUE=$(jq -r --arg v "$BASE_VERSION" \
+            '[.tags[] | select(.name == $v and .is_manifest_list) | .manifest_digest][0] // empty' /tmp/tags-sb.json)
+          KINOITE=$(jq -r --arg v "$BASE_VERSION" \
+            '[.tags[] | select(.name == $v and .is_manifest_list) | .manifest_digest][0] // empty' /tmp/tags-kt.json)
+          [[ -n "$SILVERBLUE" && -n "$KINOITE" ]] || { echo "::error::tag ${BASE_VERSION} missing on one repo"; exit 1; }
+
+          echo "base_version=${BASE_VERSION}" >> $GITHUB_OUTPUT
+
           # Non-schedule triggers always build
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Non-schedule trigger — building unconditionally."
+            echo "Non-schedule trigger — building on ${BASE_VERSION} unconditionally."
             exit 0
           fi
 
-          KINOITE=$(skopeo inspect docker://quay.io/fedora-ostree-desktops/kinoite:latest \
-            | jq -r '.Digest')
-          SILVERBLUE=$(skopeo inspect docker://quay.io/fedora-ostree-desktops/silverblue:latest \
-            | jq -r '.Digest')
-
+          STORED_VERSION=$(cat .cache/base-version 2>/dev/null || echo "none")
           STORED_KINOITE=$(cat .cache/kinoite-digest 2>/dev/null || echo "none")
           STORED_SILVERBLUE=$(cat .cache/silverblue-digest 2>/dev/null || echo "none")
 
-          echo "Kinoite:  current=${KINOITE}  stored=${STORED_KINOITE}"
-          echo "Silverblue: current=${SILVERBLUE}  stored=${STORED_SILVERBLUE}"
+          echo "Base version: current=${BASE_VERSION} stored=${STORED_VERSION}"
+          echo "Kinoite:      current=${KINOITE} stored=${STORED_KINOITE}"
+          echo "Silverblue:   current=${SILVERBLUE} stored=${STORED_SILVERBLUE}"
 
-          if [[ "$KINOITE" == "$STORED_KINOITE" && "$SILVERBLUE" == "$STORED_SILVERBLUE" ]]; then
+          if [[ "$BASE_VERSION" == "$STORED_VERSION" && "$KINOITE" == "$STORED_KINOITE" && "$SILVERBLUE" == "$STORED_SILVERBLUE" ]]; then
             echo "changed=false" >> $GITHUB_OUTPUT
             echo "No upstream changes — skipping build."
           else
             mkdir -p .cache
-            echo "$KINOITE"  > .cache/kinoite-digest
-            echo "$SILVERBLUE" > .cache/silverblue-digest
+            echo "$BASE_VERSION" > .cache/base-version
+            echo "$KINOITE"     > .cache/kinoite-digest
+            echo "$SILVERBLUE"  > .cache/silverblue-digest
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "Upstream changed — triggering build."
           fi
@@ -100,15 +136,31 @@ jobs:
     name: Build and push image
     runs-on: ${{ matrix.runner }}
     needs: check_upstream
-    if: needs.check_upstream.outputs.changed == 'true'
+    if: needs.check_upstream.outputs.changed == 'true' && needs.check_upstream.outputs.base_version != ''
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { base: silverblue, base_image: quay.io/fedora-ostree-desktops/silverblue:latest, image_name: geonix-gnome, platform: amd64, runner: ubuntu-24.04 }
-          - { base: silverblue, base_image: quay.io/fedora-ostree-desktops/silverblue:latest, image_name: geonix-gnome, platform: arm64, runner: ubuntu-24.04-arm }
-          - { base: kinoite,   base_image: quay.io/fedora-ostree-desktops/kinoite:latest,  image_name: geonix-plasma, platform: amd64, runner: ubuntu-24.04 }
-          - { base: kinoite,   base_image: quay.io/fedora-ostree-desktops/kinoite:latest,  image_name: geonix-plasma, platform: arm64, runner: ubuntu-24.04-arm }
+          - base: silverblue
+            base_image: quay.io/fedora-ostree-desktops/silverblue:${{ needs.check_upstream.outputs.base_version }}
+            image_name: geonix-gnome
+            platform: amd64
+            runner: ubuntu-24.04
+          - base: silverblue
+            base_image: quay.io/fedora-ostree-desktops/silverblue:${{ needs.check_upstream.outputs.base_version }}
+            image_name: geonix-gnome
+            platform: arm64
+            runner: ubuntu-24.04-arm
+          - base: kinoite
+            base_image: quay.io/fedora-ostree-desktops/kinoite:${{ needs.check_upstream.outputs.base_version }}
+            image_name: geonix-plasma
+            platform: amd64
+            runner: ubuntu-24.04
+          - base: kinoite
+            base_image: quay.io/fedora-ostree-desktops/kinoite:${{ needs.check_upstream.outputs.base_version }}
+            image_name: geonix-plasma
+            platform: arm64
+            runner: ubuntu-24.04-arm
 
     permissions:
       contents: read

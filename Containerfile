@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=quay.io/fedora-ostree-desktops/silverblue:latest
+ARG BASE_IMAGE=quay.io/fedora-ostree-desktops/silverblue:44
 ARG BASE_VARIANT=silverblue
 ARG IMAGE_NAME=geonix-gnome
 ARG IMAGE_REGISTRY=ghcr.io/a2rk313

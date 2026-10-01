@@ -53,7 +53,7 @@ just build-kinoite
 just build-all
 
 # Build with a custom base image
-just build geonix-gnome latest quay.io/fedora-ostree-desktops/silverblue:stable
+just build geonix-gnome latest quay.io/fedora-ostree-desktops/silverblue:44
 ```
 
 ### Build Disk Images (ISO / QCOW2 / RAW)

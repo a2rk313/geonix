@@ -4,14 +4,14 @@
   <img src="logo/logo.png" alt="Geonix Logo" width="200"/>
 </p>
 
-A Universal Blue based distro made for the cool folks that use GIS and Remote Sensing knowledge to make the world a better place.
+A Fedora Atomic based distro using uBlue components made for the cool folks that use GIS and Remote Sensing knowledge to make the world a better place.
 
 Ready-to-use Fedora Atomic desktop images pre-loaded with a comprehensive GIS software stack. Available in two variants:
 
 | Variant | Desktop | Base Image | Image |
 |---------|---------|-----------|-------|
-| **Geonix GNOME** | GNOME | [Bluefin](https://github.com/ublue-os/bluefin) | `ghcr.io/a2rk313/geonix-gnome` |
-| **Geonix Plasma** | KDE Plasma | [Aurora](https://github.com/ublue-os/aurora) | `ghcr.io/a2rk313/geonix-plasma` |
+| **Geonix GNOME** | GNOME | [Silverblue](https://fedoraproject.org/atomic-desktops/silverblue/) | `ghcr.io/a2rk313/geonix-gnome` |
+| **Geonix Plasma** | KDE Plasma | [Kinoite](https://fedoraproject.org/atomic-desktops/kinoite/) | `ghcr.io/a2rk313/geonix-plasma` |
 
 ## Included Software
 
@@ -44,16 +44,16 @@ You need [Podman](https://podman.io/) and [just](https://just.systems/) installe
 
 ```bash
 # Build the GNOME variant
-just build-bluefin
+just build-silverblue
 
 # Build the KDE variant
-just build-aurora
+just build-kinoite
 
 # Build both
 just build-all
 
 # Build with a custom base image
-just build geonix-gnome latest ghcr.io/ublue-os/bluefin:stable
+just build geonix-gnome latest quay.io/fedora-ostree-desktops/silverblue:stable
 ```
 
 ### Build Disk Images (ISO / QCOW2 / RAW)

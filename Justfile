@@ -70,9 +70,9 @@ sudoif command *args:
 
 # Build a container image
 # Usage: just build [target_image] [tag] [base_image]
-# Example: just build geonix-plasma latest ghcr.io/ublue-os/aurora:latest
+
 [group('Build Image')]
-build $target_image=image_name $tag=default_tag $base_image="ghcr.io/ublue-os/bluefin:latest":
+build $target_image=image_name $tag=default_tag $base_image="quay.io/fedora-ostree-desktops/silverblue:latest":
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -86,23 +86,23 @@ build $target_image=image_name $tag=default_tag $base_image="ghcr.io/ublue-os/bl
         --tag "${target_image}:${tag}" \
         .
 
-# Build the Aurora (KDE) variant
-# Usage: just build-aurora [tag]
+# Build the Kinoite (KDE) variant
+# Usage: just build-kinoite [tag]
 [group('Build Image')]
-build-aurora $tag=default_tag:
-    just build geonix-plasma $tag ghcr.io/ublue-os/aurora:latest
+build-kinoite $tag=default_tag:
+    just build geonix-plasma $tag quay.io/fedora-ostree-desktops/kinoite:latest
 
-# Build the Bluefin (GNOME) variant
-# Usage: just build-bluefin [tag]
+# Build the Silverblue (GNOME) variant
+# Usage: just build-silverblue [tag]
 [group('Build Image')]
-build-bluefin $tag=default_tag:
-    just build geonix-gnome $tag ghcr.io/ublue-os/bluefin:latest
+build-silverblue $tag=default_tag:
+    just build geonix-gnome $tag quay.io/fedora-ostree-desktops/silverblue:latest
 
-# Build both Aurora and Bluefin variants sequentially
+# Build both Kinoite and Silverblue variants sequentially
 [group('Build Image')]
 build-all $tag=default_tag:
-    just build-aurora $tag
-    just build-bluefin $tag
+    just build-kinoite $tag
+    just build-silverblue $tag
 
 # ─── Internal: Image Loading ───────────────────────────────────────────────────
 
@@ -173,19 +173,19 @@ _rebuild-bib $target_image $tag $type $config: (build target_image tag) && (_bui
 
 # ─── Build Virtual Machine Image ──────────────────────────────────────────────
 
-# Build a QCOW2 virtual machine image (Bluefin/GNOME)
+# Build a QCOW2 virtual machine image (Silverblue/GNOME)
 [group('Build Virtual Machine Image')]
 build-qcow2 $target_image=("localhost/geonix-gnome") $tag=default_tag: && (_build-bib target_image tag "qcow2" "disk_config/disk.toml")
 
-# Build a RAW virtual machine image (Bluefin/GNOME)
+# Build a RAW virtual machine image (Silverblue/GNOME)
 [group('Build Virtual Machine Image')]
 build-raw $target_image=("localhost/geonix-gnome") $tag=default_tag: && (_build-bib target_image tag "raw" "disk_config/disk.toml")
 
-# Build a KDE (Aurora) installer ISO
+# Build a KDE (Kinoite) installer ISO
 [group('Build Virtual Machine Image')]
 build-iso-kde $target_image=("localhost/geonix-plasma") $tag=default_tag: && (_build-bib target_image tag "anaconda-iso" "disk_config/iso-kde.toml")
 
-# Build a GNOME (Bluefin) installer ISO
+# Build a GNOME (Silverblue) installer ISO
 [group('Build Virtual Machine Image')]
 build-iso-gnome $target_image=("localhost/geonix-gnome") $tag=default_tag: && (_build-bib target_image tag "anaconda-iso" "disk_config/iso-gnome.toml")
 

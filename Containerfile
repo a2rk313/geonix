@@ -44,7 +44,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
   --no-hostonly \
   --reproducible \
   --zstd \
-  --add-dracutmodules "ostree plymouth" \
+  --add "ostree plymouth" \
   -f "/usr/lib/modules/${KERNEL_VERSION}/initramfs.img" \
   "${KERNEL_VERSION}" && \
   test -s "/usr/lib/modules/${KERNEL_VERSION}/initramfs.img" && \

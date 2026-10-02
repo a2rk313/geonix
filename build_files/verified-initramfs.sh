@@ -10,7 +10,8 @@ set -euo pipefail
 IMG="${1:?usage: verified-initramfs.sh <initramfs.img>}"
 KVER="$(basename "$(dirname "$IMG")")"
 for needle in 'spinner/bgrt-fallback\.png' 'spinner/silverblue-logo\.png' 'ostree/prepare-root\.conf'; do
-  if ! lsinitrd "${IMG}" | grep -qE "${needle}"; then
+  listing="$(lsinitrd "${IMG}")"
+  if ! grep -qE "${needle}" <<< "${listing}"; then
     echo "ERROR: initramfs ${KVER} missing ${needle} — regen did not carry branding / ostree bindings" >&2
     exit 1
   fi

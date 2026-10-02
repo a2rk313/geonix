@@ -38,6 +38,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
   /ctx/branding.sh && \
   KERNEL_VERSION=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core | head -n1) && \
   echo "Regenerating initramfs for ${KERNEL_VERSION}" && \
+  # Create /var/roothome to avoid dracut's /root symlink inst failure (benign)
+  mkdir -p /var/roothome && \
   DRACUT_NO_XATTR=1 dracut \
   --no-hostonly \
   --reproducible \

@@ -53,7 +53,4 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
   /ctx/set-components.sh
 
-# Clean up /usr/etc (disallowed by bootc container lint)
-RUN rm -rf /usr/etc || true
-
 RUN bootc container lint
